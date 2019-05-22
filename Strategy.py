@@ -2,19 +2,20 @@ from SimData import SimTickData
 from SimAccount import SimAccount
 
 class Strategy:
+    '''
+    assume all orders are market order
+    '''
     @classmethod
     def sma_trend_follow(cls, sma_term, ticks:SimTickData, i, ac:SimAccount):
         dd = DecisionData()
-        if ac.holding_side == '' and  ac.order_side =='': #no position / no order
-            if ticks.sma_incli[sma_term][i] >= 0:
-                dd.set_decision('buy',ticks.price[i],cls.__calc_opt_size(ticks.price[i],ac),'market',False,10)
-            else:
-                dd.set_decision('sell', ticks.price[i], cls.__calc_opt_size(ticks.price[i], ac), 'market', False, 10)
-        elif ac.holding_side == '' and  ac.order_side != '':
-            if ac.order_side == 'buy' and ticks.sma_incli[sma_term][i] >= 0:
+        d_side = 'buy' if ticks.sma_incli[sma_term][i] >= 0 else 'sell'
+        if ac.holding_side =='': #no position
+            dd.set_decision(d_side, ticks.price[i], cls.__calc_opt_size(ticks.price[i], ac), 'market', False, 10)
+        else: #position
+            if ac.holding_side == d_side: #do nothing
                 pass
-            elif ac.order_side == 'buy' and ticks.sma_incli[sma_term][i] < 0:
-                dd.set_decision('sell', ticks.price[i], cls.__calc_opt_size(ticks.price[i], ac), 'market', True, 10)
+            else: #exit and re-entry
+                dd.set_decision(d_side, ticks.price[i], ac.holding_size + cls.__calc_opt_size(ticks.price[i], ac), 'market', True, 10)
         return dd
 
     @classmethod
