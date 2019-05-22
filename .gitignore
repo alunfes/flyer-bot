@@ -1,6 +1,8 @@
 /ignore/
 /Model/
 /Data/
+/.ipynb*/
+/.vscode/
 /flyer-bot/
 *.csv
 *.dat
