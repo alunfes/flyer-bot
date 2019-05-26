@@ -3,21 +3,23 @@ import numpy as np
 from datetime import datetime
 #from datetime import timedelta
 
-class SimData:
+class SimTickData:
     @classmethod
-    def initialize(cls, num_term, window_term, initial_data_vol):
+    def initialize_from_csv(cls, num_term, window_term, initial_data_vol):
         cls.num_term = num_term
         cls.window_term = window_term
-        cls.read_data_from_csv('./Data/ticks.csv')
+        cls.__read_data_from_csv('./Data/ticks.csv')
         cls.ticks.del_data(initial_data_vol)
         cls.calc_all_index()
         print('Completed initialization of SimData')
         print('num_data={}, : from_dt={}, - to_dt={}'.format(len(cls.ticks.dt), cls.ticks.dt[0], cls.ticks.dt[-1]))
 
+
+
     @classmethod
-    def read_data_from_csv(cls, path):
+    def __read_data_from_csv(cls, path):
         print('Reading Data..')
-        cls.ticks = SimTickData()
+        cls.ticks = TickData()
         #df = pd.read_csv(path, header=num_skip, names=['ut','price','size'])
         df = pd.read_csv(path)
         cls.ticks.ut = list(df['ut'])
@@ -56,7 +58,7 @@ class SimData:
         return np.gradient(cls.ticks.sma[term])
 
 
-class SimTickData:
+class TickData:
     def __init__(self):
         self.ut = []
         self.dt = []
@@ -80,4 +82,4 @@ class SimTickData:
 
 
 if __name__ == '__main__':
-    SimData.initialize(1000,2)
+    SimData.initialize_from_csv(1000,2,0)

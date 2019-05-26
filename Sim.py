@@ -15,3 +15,4 @@ class Sim:
             cls.ac.move_to_next(i)
         cls.ac.last_day_operation(to_i)
         return cls.ac
+

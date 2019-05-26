@@ -1,5 +1,6 @@
-from SimData import SimTickData
+from SimTickData import TickData
 from SimAccount import SimAccount
+
 
 class Strategy:
     '''
@@ -18,6 +19,21 @@ class Strategy:
                 dd.set_decision(d_side, ticks.price[i], ac.holding_size + cls.__calc_opt_size(ticks.price[i], ac), 'market', True, 10)
         return dd
 
+
+    @classmethod
+    def model_prediction(cls, pl_kijun, pred, ticks: SimTickData, i, ac: SimAccount):
+        dd = DecisionData()
+        pred_side = pred[i].map({0: 'no', 1: 'buy', 2: 'sell', 3: 'both'}).astype(str)
+        if ac.holding_side == '' and ac.order_side == '' and pred_side != 'other': #no position no order
+            dd.set_decision(pred_side, cls.__calc_opt_size(ticks.price[i], ac), 'market', False, 10)
+        elif ac.holding_side =='' and (pred_side!= 'buy' or pred_side!= 'sell') and pred_side != ac.order_side and ac.order_type=='limit': #no position and order side != pred side and order type is limit
+            dd.set_decision(pred_side, 0,'', True, 10) #cancel order
+        elif ac.holding_side!='' and ac.order_side =='': #place pl order
+            dd.set_decision(pred_side, cls.__calc_opt_size(ticks.price[i], ac), 'limit', False, 1440)
+
+        return dd
+
+
     @classmethod
     def __calc_opt_size(cls, price, ac):
         return round((ac.asset * ac.leverage) / (price * 1.0 * ac.base_margin_rate), 2)
@@ -29,7 +45,7 @@ class DecisionData:
         self.price = 0
         self.type = 0
         self.cancel = False
-        self.expire = 0
+        self.expire = 0  #sec
 
     def set_decision(self, side, price, size, type, cancel, expire):
         self.side = side
