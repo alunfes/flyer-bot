@@ -163,6 +163,32 @@ class FlyerBot:
 
     def __update_ohlc(self): #should download ohlc soon after when it finalized
         if self.last_ohlc_min < datetime.now(self.JST).minute or (self.last_ohlc_min == 59 and datetime.now(self.JST).minute == 0):
+            self.last_ohlc_min = datetime.now()(self.JST).minute
+            flg = True
+            num_conti = 0
+            num_max_trial = 10
+            while flg:
+                res, omd = CryptowatchDataGetter.get_data_after_specific_ut(OneMinMarketData.ohlc.unix_time[-1])
+                if res == 0 and omd is not None:
+                    if len(omd) > 0:
+                        for i in range(len(omd.unix_time)):
+                            if OneMinMarketData.ohlc.unix_time[-1] < omd.unix_time[i]:
+                                OneMinMarketData.ohlc.add_and_pop(omd.unix_time[i], omd.dt[i], omd.open[i], omd.high[i], omd.low[i],omd.close[i], omd.size[i])
+                                flg = False
+                        if flg == False:
+                            self.last_ohlc_min = datetime.now(self.JST).minute
+                            OneMinMarketData.update_for_bot()
+                            df = OneMinMarketData.generate_df_for_bot()
+                            pred_x = self.model.generate_bot_pred_data(df)
+                            self.prediction = self.cbm.predict(Pool(pred_x))
+                            self.pred_side = str(int(self.prediction[0][0])).translate(str.maketrans({'0':'no', '1':'buy', '2':'sell', '3':'both'}))
+                            LogMaster.add_log('updated ohlc at '+str(datetime.now(self.JST)), self.prediction[0], self.ac)
+                num_conti += 1
+                if num_conti >= num_max_trial:
+
+
+
+
             for i in range(10):
                 res, omd = CryptowatchDataGetter.get_data_after_specific_ut(OneMinMarketData.ohlc.unix_time[-1])
                 if res == 0 and len(omd.unix_time) > 0:

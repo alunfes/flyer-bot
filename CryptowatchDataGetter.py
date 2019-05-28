@@ -58,16 +58,19 @@ class CryptowatchDataGetter:
                 if len(result) > 0 and str(result).index(str(int(target_ut // 1))) > 0:
                     flg_down_success = True
                     omd = cls.convert_json_to_ohlc(result)
-                    startind  = omd.unix_time.index(target_ut)
-                    omd.unix_time = omd.unix_time[startind+1:]
-                    omd.dt = omd.dt[startind + 1:]
-                    omd.open = omd.open[startind + 1:]
-                    omd.high = omd.high[startind + 1:]
-                    omd.low = omd.low[startind + 1:]
-                    omd.close = omd.close[startind + 1:]
-                    omd.size = omd.size[startind + 1:]
-                    flg_down_success = True
-                    return 0, omd
+                    if len(omd) > 0:
+                        startind  = omd.unix_time.index(target_ut)
+                        omd.unix_time = omd.unix_time[startind+1:]
+                        omd.dt = omd.dt[startind + 1:]
+                        omd.open = omd.open[startind + 1:]
+                        omd.high = omd.high[startind + 1:]
+                        omd.low = omd.low[startind + 1:]
+                        omd.close = omd.close[startind + 1:]
+                        omd.size = omd.size[startind + 1:]
+                        flg_down_success = True
+                        return 0, omd
+                    else:
+                        return -1, None
                 else:
                     if num_down > 5:
                         print('crypto watch data download error!')
