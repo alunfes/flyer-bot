@@ -2,16 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d2cce0c7-3134-48db-926f-66dbf2e9e417" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BotAccount.py" beforeDir="false" afterPath="$PROJECT_DIR$/BotAccount.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CryptowatchDataGetter.py" beforeDir="false" afterPath="$PROJECT_DIR$/CryptowatchDataGetter.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FlyerBot.py" beforeDir="false" afterPath="$PROJECT_DIR$/FlyerBot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LineNotification.py" beforeDir="false" afterPath="$PROJECT_DIR$/LineNotification.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LogMaster.py" beforeDir="false" afterPath="$PROJECT_DIR$/LogMaster.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/OneMinMarketData.py" beforeDir="false" afterPath="$PROJECT_DIR$/OneMinMarketData.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Trade.py" beforeDir="false" afterPath="$PROJECT_DIR$/Trade.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WebsocketMaster.py" beforeDir="false" afterPath="$PROJECT_DIR$/WebsocketMaster.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -24,8 +15,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/BotAccount.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-153">
-              <caret line="147" column="41" selection-start-line="147" selection-start-column="41" selection-end-line="147" selection-end-column="41" />
+            <state relative-caret-position="175">
+              <caret line="105" column="14" selection-start-line="105" selection-end-line="106" />
               <folding>
                 <element signature="e#1#24#0" expanded="true" />
               </folding>
@@ -34,19 +25,10 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/.gitignore">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="120">
-              <caret line="8" column="3" selection-start-line="8" selection-start-column="3" selection-end-line="8" selection-end-column="3" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/FlyerBot.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="124">
-              <caret line="219" column="31" selection-start-line="219" selection-start-column="31" selection-end-line="219" selection-end-column="31" />
+            <state relative-caret-position="98">
+              <caret line="141" column="98" selection-start-line="141" selection-start-column="98" selection-end-line="141" selection-end-column="98" />
               <folding>
                 <element signature="e#0#29#0" expanded="true" />
               </folding>
@@ -110,7 +92,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>get_current_asset</find>
       <find>None()</find>
       <find>Trade</find>
       <find>Trade-order error!</find>
@@ -140,6 +121,7 @@
       <find>np</find>
       <find>add_exec_data</find>
       <find>LogMaster</find>
+      <find>collateral</find>
     </findStrings>
     <replaceStrings>
       <replace>None</replace>
@@ -172,9 +154,9 @@
         <option value="$PROJECT_DIR$/LineNotification.py" />
         <option value="$PROJECT_DIR$/Trade.py" />
         <option value="$PROJECT_DIR$/WebsocketMaster.py" />
-        <option value="$PROJECT_DIR$/FlyerBot.py" />
         <option value="$PROJECT_DIR$/BotAccount.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
+        <option value="$PROJECT_DIR$/FlyerBot.py" />
       </list>
     </option>
   </component>
@@ -358,12 +340,12 @@
     <frame x="0" y="23" width="1440" height="825" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.13601127" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.13601127" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.38744885" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.38744885" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.40927693" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -588,30 +570,30 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/FlyerBot.py">
+    <entry file="file://$PROJECT_DIR$/.gitignore">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="124">
-          <caret line="219" column="31" selection-start-line="219" selection-start-column="31" selection-end-line="219" selection-end-column="31" />
-          <folding>
-            <element signature="e#0#29#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="120">
+          <caret line="8" column="3" selection-start-line="8" selection-start-column="3" selection-end-line="8" selection-end-column="3" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/BotAccount.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-153">
-          <caret line="147" column="41" selection-start-line="147" selection-start-column="41" selection-end-line="147" selection-end-column="41" />
+        <state relative-caret-position="175">
+          <caret line="105" column="14" selection-start-line="105" selection-end-line="106" />
           <folding>
             <element signature="e#1#24#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
+    <entry file="file://$PROJECT_DIR$/FlyerBot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="8" column="3" selection-start-line="8" selection-start-column="3" selection-end-line="8" selection-end-column="3" />
+        <state relative-caret-position="98">
+          <caret line="141" column="98" selection-start-line="141" selection-start-column="98" selection-end-line="141" selection-end-column="98" />
+          <folding>
+            <element signature="e#0#29#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

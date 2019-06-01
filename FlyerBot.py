@@ -140,7 +140,6 @@ class FlyerBot:
             elif self.ac.holding_side != '' and self.ac.order_side != '':#sleep until next ohlc update when prediction is same as
                 time.sleep(1)
             if self.ac.order_side != '' and abs(self.ac.order_price - TickData.get_ltp()) <= 5000:
-                pass
                 res = self.ac.check_execution()
                 if res !='':
                     LogMaster.add_log(res,self.prediction[0],self.ac)
@@ -220,6 +219,9 @@ class FlyerBot:
                 if len(self.prediction) > 1:
                     print('prediction length error!')
                 self.pred_side = str(int(self.prediction[0][0])).translate(str.maketrans({'0': 'no', '1': 'buy', '2': 'sell', '3': 'both'}))
+            self.ac.sync_position_order()
+            self.ac.calc_collateral_change()
+            self.ac.calc_pl(TickData.get_ltp())
             print('dt={}, open={},high={},low={},close={}'.format(OneMinMarketData.ohlc.dt[-1],
                                                                   OneMinMarketData.ohlc.open[-1],
                                                                   OneMinMarketData.ohlc.high[-1],
