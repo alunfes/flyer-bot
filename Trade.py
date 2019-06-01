@@ -26,6 +26,8 @@ class Trade:
         })
 
         cls.order_id = {}
+        cls.spread_loss_profit = 0
+        cls.spread_loss_profit_log = []
         cls.num_private_access = 0
         cls.num_public_access = 0
         cls.flg_api_limit = False
@@ -37,7 +39,7 @@ class Trade:
 
     @classmethod
     def __read_keys(cls):
-        file = open('./ignore/ex.txt', 'r')  # 読み込みモードでオープン
+        file = open('/Users/alun/Projects/flyer-tick-bot/ignore/ex.txt', 'r')  # 読み込みモードでオープン
         cls.secret_key = file.readline().split(':')[1]
         cls.secret_key = cls.secret_key[:len(cls.secret_key) - 1]
         cls.api_key = file.readline().split(':')[1]
@@ -204,13 +206,13 @@ class Trade:
                 if cls.check_exception(e) == 'ok':
                     pass
                 print('error in get_order_status ' + str(e))
-                LogMaster.add_log('api_error - Trade-get order status error! '+str(e), 0,None)
+                LogMaster.add_log('api_error - Trade-get order status error! '+str(e), None)
                 LineNotification.send_error('api_error:Trade-get order status error!'+str(e))
             finally:
                 return res
         else:
             print('get_order_status is temporary exhibited due to API access limitation!')
-            LogMaster.add_log('get_order_status is temporary exhibited due to API access limitation!', 0, None)
+            LogMaster.add_log('get_order_status is temporary exhibited due to API access limitation!', None)
             return None
 
     '''
@@ -329,7 +331,7 @@ class Trade:
             order = cls.bf.fetch_open_orders(symbol='BTC/JPY', params={"product_code": "FX_BTC_JPY", 'child_order_acceptance_id': order_id})
         except Exception as e:
             print('error in get_order ' + str(e))
-            LogMaster.add_log('api_error - Trade-get get_order error! ' + str(e), 0,None)
+            LogMaster.add_log('api_error - Trade-get get_order error! ' + str(e), None)
             LineNotification.send_error('api_error - Trade-get get_order error! ' + str(e))
             if cls.check_exception(e) == 'ok':
                 pass
@@ -364,6 +366,164 @@ class Trade:
             else:
                 return cls.get_positions()
         return positions
+
+    @classmethod
+    def get_executions(cls):
+        cls.num_private_access += 1
+        executions = ''
+        try:
+            executions = cls.bf.private_get_getexecutions(params={"product_code": "FX_BTC_JPY"})
+        except Exception as e:
+            print('error in get_executions ' + str(e))
+            LogMaster.add_log('api_error - Trade-get get_executions error! ' + str(e), None)
+            LineNotification.send_error('api_error - Trade get_executions error! ' + str(e))
+            if cls.check_exception(e) == 'ok':
+                pass
+            else:
+                return cls.get_positions()
+        return executions
+
+
+    @classmethod
+    def market_order_wait_till_execution2(cls, side, total_size):
+        size = []
+        price = []
+        wait_sec = 0.3
+        max_wait = 2.1
+        num = 0
+
+        try:
+            cls.num_private_access += 1
+            order_id = cls.bf.create_order(
+                symbol='BTC/JPY',
+                type='market',
+                side=side,
+                amount=total_size,
+                params={'product_code': 'FX_BTC_JPY'}
+            )
+        except Exception as e:
+            print('market order failed! ' + str(e))
+            LogMaster.add_log('market order failed! ' + str(e), None)
+            LineNotification.send_error( 'market order failed! ' + str(e))
+            cls.check_exception(e)
+            return -1, 0,0,''
+
+        order_id = order_id['info']['child_order_acceptance_id']
+        print('waiting for market order execution...')
+        while sum(size) < total_size:
+            executions = cls.get_executions()
+            for exec in executions:
+                if exec["child_order_acceptance_id"] == order_id:
+                    size.append(exec["size"])
+                    price.append(exec["price"])
+            time.sleep(wait_sec)
+            num += 1
+            if num * wait_sec > max_wait:
+                print('can not complete Trade - check_and_wait_till_all_execution!')
+                LogMaster.add_log('can not complete Trade - check_and_wait_till_all_execution!',0,None)
+                LineNotification.send_error('can not complete Trade - check_and_wait_till_all_execution!')
+                return -1, sum(size), round(sum( price[i] * size[i] for i in range(len(price)) ) / sum(size)), order_id
+        ave_p = round(sum( price[i] * size[i] for i in range(len(price)) ) / sum(size))
+        print('market order has been successfully executed.'+ 'side='+side+', ave price='+str(ave_p)+', size='+str(round(sum(size),2)))
+        return 0, round(sum(size),2), ave_p, order_id
+
+    @classmethod
+    def market_order_wait_till_execution3(cls, side, total_size):
+        size = []
+        price = []
+        max_wait = 10
+        num = 0
+        bid = TickData.get_bid_price()
+        ask = TickData.get_ask_price()
+        try:
+            cls.num_private_access += 1
+            order_id = cls.bf.create_order(
+                symbol='BTC/JPY',
+                type='market',
+                side=side,
+                amount=total_size,
+                params={'product_code': 'FX_BTC_JPY'}
+            )
+        except Exception as e:
+            print('market order failed! ' + str(e))
+            LogMaster.add_log('market order failed! ' + str(e), None)
+            LineNotification.send_error('market order failed! ' + str(e))
+            cls.check_exception(e)
+            return -1, 0, 0, ''
+
+        order_id = order_id['info']['child_order_acceptance_id']
+        print('waiting for market order execution...')
+        start = time.time()
+        while sum(size) < total_size:
+            exe_data = TickData.get_exe_data()[-100:]
+            for exec in exe_data:
+                if exec[side+"_child_order_acceptance_id"] == order_id:
+                    size.append(exec["size"])
+                    price.append(exec["price"])
+            num += 1
+            if time.time() - start > max_wait:
+                print('can not complete Trade - check_and_wait_till_all_execution!')
+                LogMaster.add_log('can not complete Trade - check_and_wait_till_all_execution!', None)
+                LineNotification.send_error('can not complete Trade - check_and_wait_till_all_execution!')
+                return -1, sum(size), round(sum(price[i] * size[i] for i in range(len(price))) / sum(size)), order_id
+        ave_p = round(sum(price[i] * size[i] for i in range(len(price))) / sum(size))
+        print('market order has been successfully executed.' + 'side=' + side + ', ave price=' + str(ave_p) + ', size=' + str(round(sum(size), 2)))
+        sp = ask - ave_p if side == 'buy' else ave_p - bid
+        print('market order spread loss/profit = '+str(sp))
+        cls.spread_loss_profit += sp
+        cls.spread_loss_profit_log.append(sp)
+        return 0, round(sum(size), 2), ave_p, order_id
+
+
+
+
+    @classmethod
+    def opt_price_wait_till_execution(cls, side, total_size):
+        exec_size = []
+        exec_price = []
+        max_wait = 2.1
+        loop_sec = 0.3
+        try:
+            price = TickData.get_bid_price() if side =='buy' else TickData.get_ask_price()
+            cls.num_private_access += 1
+            order_id = cls.bf.create_order(
+                symbol='BTC/JPY',
+                type='limit',
+                side=side,
+                price=price,
+                amount=total_size,
+                params={'product_code': 'FX_BTC_JPY', 'minute_to_expire': 1}  # 期限切れまでの時間（分）（省略した場合は30日）
+            )
+        except Exception as e:
+            print('opt price order failed! ' + str(e))
+            LogMaster.add_log('opt price order failed! ' + str(e), None)
+            LineNotification.send_error('opt price order failed! ' + str(e))
+            cls.check_exception(e)
+            return -1, 0, 0, ''
+
+        order_id = order_id['info']['child_order_acceptance_id']
+        print('waiting for opt price order execution...')
+        num = 0
+        ave_p = 0
+        while sum(exec_size) < total_size:
+            executions = cls.get_executions()
+            for exec in executions:
+                if exec["child_order_acceptance_id"] == order_id:
+                    exec_size.append(exec["size"])
+                    exec_price.append(exec["price"])
+            time.sleep(loop_sec)
+            num += 1
+            if max_wait < loop_sec * num:
+                cls.cancel_order(order_id)
+                if sum(exec_size) > 0:
+                    ave_p = round(sum(exec_price[i] * exec_size[i] for i in range(len(exec_price))) / sum(exec_size))
+                print('opt price order has been failed.' + 'side=' + side + ', ave price=' + str(ave_p) + ', size=' + str(round(sum(exec_size), 2)))
+                return -1, round(sum(exec_size), 2), ave_p, order_id
+        ave_p = round(sum(exec_price[i] * exec_size[i] for i in range(len(exec_price))) / sum(exec_size))
+        print('opt price order has been successfully executed.' + 'side=' + side + ', ave price=' + str(ave_p) + ', size=' + str(round(sum(exec_size), 2)))
+        return 0, round(sum(exec_size), 2), ave_p, order_id
+
+
 
     @classmethod
     def cancel_order(cls, order_id):
@@ -489,6 +649,7 @@ class Trade:
         i = 0
         print('waiting order execution...')
         flg_activated = False
+        time.sleep(1)
         while True:
             status = cls.get_order_status(id)
             if len(status) > 0:
@@ -568,11 +729,11 @@ class Trade:
 
 if __name__ == '__main__':
     SystemFlg.initialize()
-    TickData.initialize()
+    TickData.initialize(90)
     time.sleep(5)
     LogMaster.initialize()
     Trade.initialize()
-    print(Trade.get_order_status('JRF20190526-143431-187560'))
+    print(Trade.bf.has())
     #oid = Trade.order('sell',0,0.01,'market',0)
     #print(Trade.get_collateral())
     #test = Trade.cancel_and_wait_completion('test')
@@ -588,7 +749,6 @@ if __name__ == '__main__':
     time.sleep(5)
     print(Trade.get_order_status(oid)[0])
     '''
-
 
 
 

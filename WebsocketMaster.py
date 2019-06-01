@@ -6,7 +6,11 @@ import asyncio
 import ssl
 from statistics import mean, median,variance,stdev
 from datetime import datetime
+import pandas as pd
 import pytz
+import numpy as np
+from OneMinData import OneMinData
+
 
 class WebsocketMaster:
     def __init__(self, channel, symbol=''):
@@ -85,39 +89,73 @@ TickData class
 '''
 class TickData:
     @classmethod
-    def initialize(cls):
-        cls.lock = threading.Lock()
-        cls.ltp = 0
+    def initialize(cls, kairi_term, trend_term):
+        cls.exec_lock = threading.Lock()
+        cls.ticker_lock = threading.Lock()
+        cls.ohlc_lock = threading.Lock()
+        cls.ltp = []
         cls.ws_execution = WebsocketMaster('lightning_executions_', 'FX_BTC_JPY')
         cls.ws_ticker = WebsocketMaster('lightning_ticker_', 'FX_BTC_JPY')
         cls.exec_data = []
         cls.ticker_data = []
         cls.std_1m = 0
-        cls.ohlc = []
+        cls.kairi_term = kairi_term
+        cls.trend_term = trend_term
+        cls.sma = []
+        cls.sma_gradient = []
+        cls.sma_kairi = []
+        cls.ohlc = OneMinData()
+        cls.ohlc.initialize()
+        cls.last_ohlc_min = int(datetime.now().minute)+1 if datetime.now().minute != 59 else 0
         cls.JST = pytz.timezone('Asia/Tokyo')
         th = threading.Thread(target=cls.start_thread)
         th.start()
 
     @classmethod
     def get_ltp(cls):
-        with cls.lock:
+        with cls.exec_lock:
             if len(cls.exec_data) > 0:
                 return cls.exec_data[-1]['price']
             else:
                 return None
 
     @classmethod
+    def get_ohlc(cls):
+        if len(cls.ohlc.unix_time) > 0:
+            return cls.ohlc
+        else:
+            return None
+
+    @classmethod
+    def get_exe_data(cls):
+        return cls.exec_data[:]
+
+    @classmethod
+    def get_sma_gradient(cls):
+        if len(cls.sma_gradient) > 0:
+            return cls.sma_gradient[-1]
+        else:
+            return 0
+
+    @classmethod
+    def get_sma_kairi(cls):
+        if len(cls.sma_kairi) > 0:
+            return cls.sma_kairi[-1]
+        else:
+            return 0
+
+    @classmethod
     def get_1m_std(cls):
         return cls.std_1m
 
     @classmethod
-    def __calc_std(cls, ltps):
-        if len(ltps) > 60:
-            cls.std_1m = stdev(ltps[-60:])
+    def __calc_std(cls):
+        if len(cls.ltp) > 60:
+            cls.std_1m = stdev(cls.ltp[-60:])
 
     @classmethod
     def get_bid_price(cls):
-        with cls.lock:
+        with cls.ticker_lock:
             if len(cls.ticker_data) > 0:
                 return cls.ticker_data[-1]['best_bid']
             else:
@@ -125,28 +163,68 @@ class TickData:
 
     @classmethod
     def get_ask_price(cls):
-        with cls.lock:
+        with cls.ticker_lock:
             if len(cls.ticker_data) > 0:
                 return cls.ticker_data[-1]['best_ask']
             else:
                 return None
 
-
     @classmethod
     def start_thread(cls):
-        ltps = []
         while True:
-            #ltps.expand(list([d.get('ltp') for d in cls.ticker_data]))
             cls.__check_thread_status()
-            cls.__calc_std(list([d.get('ltp') for d in cls.ticker_data]))
-            time.sleep(1)
+            #cls.__calc_std(list([d.get('ltp') for d in cls.ticker_data]))
+            time.sleep(10)
 
     @classmethod
+    def __calc_sma_gradient(cls):
+        if len(cls.ticker_data) > cls.trend_term + 5:
+            sma = pd.Series(cls.ltp).rolling(cls.trend_term).mean()
+            gra = np.gradient(sma)
+            cls.sma.append(sma.iloc[-1])
+            cls.sma_gradient.append(gra[-1])
+
+    @classmethod
+    def __calc_sma_kairi(cls):
+        if len(cls.ticker_data) > cls.kairi_term + 5:
+            sma = pd.Series(cls.ltp).rolling(cls.kairi_term).mean()
+            cls.sma_kairi.append(cls.ltp[-1] / sma.iloc[-1])
+
+    '''
+    00:00:10 started, last_min = 00:01
+    00:00:10 no action as not enough data
+    00:01:00 no action as not enough data
+    00:02:00 calc data for 00:01, last_min = 00:02
+    00:02:20 no action as not enough data, last_min = 00:02
+    '''
+    @classmethod
     def __calc_ohlc(cls):
-        if datetime.now(cls.JST).second <2 and :
-            if len(cls.ohlc) ==0 and len(cls.ticker_data) > 120:
-
-
+        if datetime.now(cls.JST).minute > cls.last_ohlc_min or (cls.last_ohlc_min == 59 and datetime.now(cls.JST).minute == 0):
+            executions = cls.get_exe_data()
+            dlist = [d.get('exec_date') for d in executions]
+            p = [d.get('price') for d in executions]
+            size = [d.get('size') for d in executions]
+            i = 1
+            target_min = int(datetime.now(cls.JST).minute - 1 if datetime.now(cls.JST).minute > 0 else 59)
+            plist = []
+            sizelist = []
+            while int(dlist[-i].split('T')[1].split(':')[1]) != target_min:
+                i+= 1
+            while int(dlist[-i].split('T')[1].split(':')[1]) == target_min:
+                plist.append(p[-i])
+                sizelist.append(size[-i])
+                i += 1
+            zurashi_time = target_min + 1 if target_min != 59 else 0 # to consist with cryptowatch data
+            cls.ohlc.dt.append(datetime(datetime.now(cls.JST).year,datetime.now(cls.JST).month,datetime.now(cls.JST).day,datetime.now(cls.JST).hour,zurashi_time,0))
+            cls.ohlc.unix_time.append(cls.ohlc.dt[-1].timestamp())
+            cls.ohlc.open.append(plist[-1])
+            cls.ohlc.high.append(max(plist))
+            cls.ohlc.low.append(min(plist))
+            cls.ohlc.close.append(plist[0])
+            cls.ohlc.size.append(sum(sizelist))
+            cls.last_ohlc_min = datetime.now(cls.JST).minute
+            #print('ohlc calc completion='+str(datetime.now()))
+            #print('dt={},ut={},open={},high={},low={},close={}'.format(omd.dt, omd.unix_time, omd.open, omd.high,omd.low, omd.close))
 
     @classmethod
     def __check_thread_status(cls):
@@ -157,36 +235,35 @@ class TickData:
 
     @classmethod
     def add_exec_data(cls, exec):
-        with cls.lock:
-            if len(exec) > 0:
+        if len(exec) > 0:
+            with cls.exec_lock:
                 cls.exec_data.extend(exec)
                 if len(cls.exec_data) >= 30000:
                     del cls.exec_data[:-10000]
-
+            with cls.ohlc_lock:
+                cls.__calc_ohlc()
 
     @classmethod
     def add_ticker_data(cls, ticker):
-        with cls.lock:
-            if len(ticker) is not None:
+        if len(ticker) is not None:
+            with cls.ticker_lock:
                 cls.ticker_data.append(ticker)
                 if len(cls.ticker_data) >= 30000:
                     del cls.ticker_data[:-10000]
-            else:
-                print(ticker)
+            cls.ltp.append(ticker['ltp'])
+            cls.__calc_sma_gradient()
+            cls.__calc_sma_kairi()
+        else:
+            print(ticker)
 
-class OHLC:
-    def __init__(self):
-        self.open = 0
-        self.high = 0
-        self.low = 0
-        self.close = 0
-        self.dt = ''
 
 if __name__ == '__main__':
-    TickData.initialize()
+    TickData.initialize(30,30)
     while True:
         time.sleep(1)
-        print(len(TickData.ticker_data))
+        omd = TickData.get_latest_ohlc()
+        #if omd is not None:
+            #print('dt={},ut={},open={},high={},low={},close={}'.format(omd.dt,omd.unix_time,omd.open,omd.high,omd.low,omd.close))
         #print(str(TickData.get_ltp()))
         #print(str(TickData.get_bid_price()))
         #print(str(TickData.get_ask_price()))

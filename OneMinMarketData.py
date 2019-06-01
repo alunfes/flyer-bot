@@ -3,6 +3,7 @@ from OneMinData import OneMinData
 import numpy as np
 import pandas as pd
 import talib as ta
+from datetime import datetime
 
 
 
@@ -30,7 +31,8 @@ class OneMinMarketData:
         ohlc = OneMinData()
         ohlc.initialize()
         df = pd.read_csv(file_name)
-        ohlc.dt = list(df['dt'])
+        ohlc.dt = list(map(lambda x: datetime.strptime(str(x),'%Y-%m-%d %H:%M:%S'),list(df['dt'])))
+        #ohlc.dt = list(df['dt'])
         ohlc.unix_time = list(df['unix_time'])
         ohlc.open = list(df['open'])
         ohlc.high = list(df['high'])

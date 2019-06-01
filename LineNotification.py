@@ -13,7 +13,7 @@ class LineNotification:
 
     @classmethod
     def __read_keys(cls):
-        file = open('./ignore/line.txt', 'r')  # 読み込みモードでオープン
+        file = open('/Users/alun/Projects/flyer-tick-bot/ignore/line.txt', 'r')  # 読み込みモードでオープン
         cls.token = file.readline().split(':')[1]
         file.close()
 
@@ -51,13 +51,12 @@ class LineNotification:
         p = performance
         if len(p) > 0:
             await cls.__send_message('\r\n' + '[' + str(p['dt'].strftime("%m/%d %H:%M:%S")) + ']' +
-                                     '\r\n' + 'p:' + str(p['collateral_change']) + ', p-min:' + str(round(p['collateral_change_per_min'], 2)) +
-                                     ', num:' + str(p['num_trade']) + ', rate:' + str(p['win_rate']) +
-                                     '\r\n' + str(p['posi_side'])+ ' : ' + str(p['prediction']))
+                                     '\r\n' + 'p:' + str(p['total_pl']) + ', p-min:' + str(round(p['total_pl_per_min'], 2)) +
+                                     ', num:' + str(p['num_trade']) + ', rate:' + str(round(p['win_rate'],2)) +
+                                     '\r\n' + str(p['posi_side'])+' : ' + str(p['prediction']))
 
     @classmethod
     async def __send_message(cls, message):
-
         payload = {"message": message}
         try:
             res = requests.post(cls.line_api, headers=cls.headers, data=payload, timeout=(6.0))

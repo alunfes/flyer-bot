@@ -7,14 +7,19 @@ class BotAccount:
         self.initialize_holding()
 
         self.initial_collateral = Trade.get_collateral()['collateral']
-        self.collateral_change = 0
+        self.collateral = 0
+        self.open_pnl = 0
+        self.realized_pl = 0
+        self.total_pl = 0 #realized_pl + open pnl
+        self.total_pl_log = []
+        self.total_pl_per_min = 0
+        self.collateral_change = 0 #collateral - initial_collateral
         self.collateral_change_per_min = 0
         self.collateral_change_log = []
 
         self.num_trade = 0
         self.num_win = 0
         self.win_rate = 0
-        self.pl_per_min = 0
         self.elapsed_time = 0
 
         self.num_trade = 0
@@ -22,6 +27,7 @@ class BotAccount:
         self.win_rate = 0
 
         self.sync_position_order()
+        self.last_exe_checked_ind = 0
 
 
     def initialize_order(self):
@@ -84,16 +90,47 @@ class BotAccount:
 
     def calc_collateral_change(self):
         col = Trade.get_collateral()
-        self.collateral_change = round(float(col['collateral']) + float(col['open_position_pnl']) - self.initial_collateral)
+        self.collateral = col['collateral']
+        self.open_pnl = col['open_position_pnl']
+        col_change = round(self.collateral - self.initial_collateral)
+        self.realized_pl += col_change - self.collateral_change
+        self.num_trade += 1
+        if col_change > self.collateral_change:
+            self.num_win += 1
+        self.win_rate = float(self.num_win) / float(self.num_trade)
+        self.collateral_change = col_change
+        self.collateral_change_log.append(self.collateral_change)
         if self.elapsed_time > 0:
-            self.collateral_change_per_min = round(self.collateral_change / (self.elapsed_time/60.0), 4)
+            self.collateral_change_per_min = round(self.collateral_change / (self.elapsed_time / 60.0), 4)
+
+    def calc_pl(self, ltp):
+        if self.holding_side == '':
+            self.open_pnl = 0
         else:
-            pass
+            self.open_pnl = round((ltp - self.holding_price) * self.holding_size if self.holding_side == 'buy' else (self.holding_price - ltp) * self.holding_size)
+        self.total_pl = self.realized_pl + self.open_pnl
+        self.total_pl_log.append(self.total_pl)
+        if self.elapsed_time > 0:
+            self.total_pl_per_min = round(self.total_pl / (self.elapsed_time / 60.0), 4)
+
+
 
     def update_holding(self, side, price, size, id):
-        self.holding_side = side
-        self.holding_price = price
-        self.holding_size = size
+        if self.holding_side == '':
+            self.holding_side = side
+            self.holding_price = price
+            self.holding_size = size
+        elif self.holding_side == side:
+            self.holding_price = (self.holding_price * self.holding_size + price * size) / (self.holding_size + size)
+            self.holding_size += round(size,2)
+        elif self.holding_side != side and self.holding_size == size:
+            self.initialize_holding()
+        elif self.holding_side != side and self.holding_size > size:
+            self.holding_size -= round(size,2)
+        elif self.holding_side != side and self.holding_size < size:
+            self.holding_side = side
+            self.holding_size = round(size - self.holding_size,2)
+            self.holding_price = price
         self.holding_id = id
 
     def update_order(self, side, price, exec_size, outstanding_size, id, expire, status):
@@ -106,25 +143,37 @@ class BotAccount:
         self.order_status = status
 
     def check_execution(self):
-        if self.order_side !='':
-            status = Trade.get_order_status(self.order_id) #{'id': 0, 'child_order_id': 'JFX20190218-133228-026751F', 'product_code': 'FX_BTC_JPY', 'side': 'BUY', 'child_order_type': 'LIMIT', 'price': 300000.0, 'average_price': 0.0, 'size': 0.01, 'child_order_state': 'ACTIVE', 'expire_date': '2019-03-20T13:32:16', 'child_order_date': '2019-02-18T13:32:16', 'child_order_acceptance_id': 'JRF20190218-133216-339861', 'outstanding_size': 0.01, 'cancel_size': 0.0, 'executed_size': 0.0, 'total_commission': 0.0}
-            if status is not None:
-                order_type = 'new entry' if self.order_status == 'new entrying' else 'pl'
-                if len(status) > 0: #check if executed (fully / partially)
-                    if status[0]['child_order_state'] =='COMPLETED':
-                        print(order_type+' order has been executed.')
-                        self.update_holding(status[0]['side'].lower(),status[0]['average_price'],status[0]['executed_size'],status[0]['child_order_acceptance_id'])
-                        self.initialize_order()
-                        self.calc_collateral_change()
-                        return order_type+' order has been executed.'
-                    elif status[0]['executed_size'] > self.order_executed_size:
-                        print(order_type + ' order has been partially executed.')
-                        self.order_executed_size = status[0]['executed_size']
-                        self.order_outstanding_size = status[0]['outstanding_size']
-                        return order_type+' order has been partially executed.'
-                else:
-                    print('order has been expired. '+status[0])
-                    self.initialize_order()
-                    return 'order has been expired'
-            else:
-                return 'get_order_status is temporary exhibited due to API access limitation!'
+        exe_data = TickData.get_exe_data()
+        if len(exe_data) < self.last_exe_checked_ind:
+            self.last_exe_checked_ind = 0
+        else:
+            n = len(exe_data)
+            exe_data = exe_data[self.last_exe_checked_ind:]
+            self.last_exe_checked_ind = n-1
+        size = []
+        price = []
+        for exec in exe_data:
+            if exec[self.order_side + "_child_order_acceptance_id"] == self.order_id:
+                size.append(exec["size"])
+                price.append(exec["price"])
+        ave_p = round(sum(price[i] * size[i] for i in range(len(price))) / sum(size))
+        if abs(sum(size) - self.order_executed_size + self.order_outstanding_size) <= 0.00001: #order has been fully executed
+            print(self.order_side+' order has been fully executed.'+'price='+str(ave_p)+', size='+str(sum(size)))
+            self.update_holding(self.order_side,ave_p,self.order_outstanding_size+self.order_executed_size,self.order_id)
+            self.initialize_order()
+            return self.order_side+' order has been fully executed.'+'price='+str(ave_p)+', size='+str(sum(size))
+        elif sum(size) > self.order_executed_size:
+            print(self.order_side + ' order has been partially executed.' + 'price=' + str(ave_p) + ', size=' + str(sum(size) - self.order_executed_size))
+            self.update_holding(self.order_side, ave_p, str(sum(size) - self.order_executed_size), self.order_id)
+            self.update_order(self.order_side,self.order_price,sum(size), self.order_outstanding_size+self.order_executed_size - sum(size),self.order_id,self.order_expire,self.order_status)
+            return self.order_side + ' order has been partially executed.' + 'price=' + str(ave_p) + ', size=' + str(sum(size) - self.order_executed_size)
+        return ''
+
+
+if __name__ == '__main__':
+    import time
+    Trade.initialize()
+    ac = BotAccount()
+    start = time.time()
+    ac.sync_position_order()
+    print(time.time() -start)
