@@ -28,9 +28,10 @@ class S3Master:
     def remove_file(cls, file_name):
         files = cls.get_file_list()
         s3_client = boto3.client('s3')
-        for f in files:
-            if file_name in str(f.key):
-                s3_client.delete_object(Bucket=cls.__bucket_name, Key=f.key)
+        if files is not None:
+            for f in files:
+                if file_name in str(f.key):
+                    s3_client.delete_object(Bucket=cls.__bucket_name, Key=f.key)
 
 if __name__ == '__main__':
     pass
