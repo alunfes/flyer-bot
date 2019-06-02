@@ -3,7 +3,7 @@ from OneMinData import OneMinData
 import numpy as np
 import pandas as pd
 import talib as ta
-from datetime import datetime
+import datetime
 
 
 
@@ -31,7 +31,7 @@ class OneMinMarketData:
         ohlc = OneMinData()
         ohlc.initialize()
         df = pd.read_csv(file_name)
-        ohlc.dt = list(map(lambda x: datetime.strptime(str(x),'%Y-%m-%d %H:%M:%S'),list(df['dt'])))
+        ohlc.dt = list(map(lambda x: datetime.datetime.strptime(str(x),'%Y-%m-%d %H:%M:%S'),list(df['dt'])))
         #ohlc.dt = list(df['dt'])
         ohlc.unix_time = list(df['unix_time'])
         ohlc.open = list(df['open'])
@@ -285,7 +285,10 @@ class OneMinMarketData:
     @jit
     def generate_tick_pred_data(cls, ohlc, prediction, start_ind): #assume index 0 of ohlc and prediction is matched
         tick = []
+        dt = []
         ut = []
+        start_dt = ohlc.dt[0]
+        start_ut = ohlc.unix_time[0]
         pred = []
         split_num = 60
         ohlc.del_data(len(ohlc.close)-start_ind)
@@ -318,8 +321,12 @@ class OneMinMarketData:
             elif split_num - len(om_tick) < 0:
                 del om_tick[-(len(om_tick) - split_num):]
             tick.extend(om_tick)
+            ut.extend([start_ut + (i+1) for i in range(split_num)])
+            dt.extend([start_dt+datetime.timedelta(seconds=i+1) for i in range(split_num)])
+            start_ut = ut[-1]
+            start_dt = dt[-1]
             if i ==0:
                 pred.extend([0] * split_num)
             else:
                 pred.extend([prediction[i-1]] * split_num)
-        return (tick, pred)
+        return (tick, ut, dt, pred)

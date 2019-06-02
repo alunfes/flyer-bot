@@ -220,14 +220,13 @@ class FlyerBot:
                     print('prediction length error!')
                 self.pred_side = str(int(self.prediction[0][0])).translate(str.maketrans({'0': 'no', '1': 'buy', '2': 'sell', '3': 'both'}))
             self.ac.sync_position_order()
-            self.ac.calc_collateral_change()
             self.ac.calc_pl(TickData.get_ltp())
             print('dt={}, open={},high={},low={},close={}'.format(OneMinMarketData.ohlc.dt[-1],
                                                                   OneMinMarketData.ohlc.open[-1],
                                                                   OneMinMarketData.ohlc.high[-1],
                                                                   OneMinMarketData.ohlc.low[-1],
                                                                   OneMinMarketData.ohlc.close[-1]))
-            print('total_pl={}, pl per min={}, num_trade=[},win_rate={},prediction={},holding_side={},holding_price={},holding_size={}'.
+            print('total_pl={}, pl per min={}, num_trade={},win_rate={},prediction={},holding_side={},holding_price={},holding_size={}'.
                   format(self.ac.total_pl,self.ac.total_pl_per_min,self.ac.num_trade,self.ac.win_rate,self.prediction[0],self.ac.holding_side,self.ac.holding_price,self.ac.holding_size))
             print('private access per 300sec={}'.format(Trade.total_access_per_300s))
             LineNotification.send_notification(LogMaster.get_latest_performance())

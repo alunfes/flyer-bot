@@ -1,5 +1,8 @@
 import requests
 import asyncio
+import seaborn as sns
+import  numpy as np
+import matplotlib as plt
 
 
 class LineNotification:
@@ -30,7 +33,16 @@ class LineNotification:
         loop.run_until_complete(cls.__send_error(message))
 
     @classmethod
-    def send_pl_chart(cls):
+    def send_pl_chart(cls, pl_list, close, dt):
+        sns.set_style('whitegrid')
+        blue, = sns.color_palette('muted',1)
+        x = np.arange(len(pl_list))
+        fig, ax1 = plt.subplots()
+        ax1.plot(dt, close, color=blue, lw = 3)
+        ax1.xais.set_major_locator(xloc)
+        ax1.xais.set_major_formatter(xfmt)
+
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(cls.__send_error(message))
