@@ -16,3 +16,28 @@ class Sim:
         cls.ac.last_day_operation(to_i)
         return cls.ac
 
+    @classmethod
+    def sim_lgbmodel(cls, stdata, pl_kijun):
+        cls.ac = SimAccount(stdata)
+        for i in range(len(stdata.prediction)-1):
+            dd = Strategy.model_prediction(pl_kijun, stdata,i,cls.ac)
+            if dd.cancel:
+                cls.ac.cancel_order(i)
+            elif dd.side != '':
+                cls.ac.entry_order(dd.side,dd.price,dd.size,dd.type,dd.expire)
+            cls.ac.move_to_next(i)
+        cls.ac.last_day_operation(len(stdata.prediction)-1)
+        return cls.ac
+
+
+
+        for i in range(from_i,to_i):
+            dd = Strategy.sma_trend_follow(sma_term,ticks,i,cls.ac)
+            if dd.cancel == False and dd.price >0:
+                cls.ac.entry_order(dd.side,dd.price,dd.size,dd.type,dd.expire)
+            elif dd.cancel:
+                cls.ac.cancel_order(i)
+            cls.ac.move_to_next(i)
+        cls.ac.last_day_operation(to_i)
+        return cls.ac
+

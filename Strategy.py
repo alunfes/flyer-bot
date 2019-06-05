@@ -21,16 +21,20 @@ class Strategy:
 
 
     @classmethod
-    def model_prediction(cls, pl_kijun, pred, ticks: SimTickData, i, ac: SimAccount):
+    def model_prediction(cls, pl_kijun, pred, ticks, i, ac: SimAccount):
         dd = DecisionData()
         pred_side = pred[i].map({0: 'no', 1: 'buy', 2: 'sell', 3: 'both'}).astype(str)
         if ac.holding_side == '' and ac.order_side == '' and pred_side != 'other': #no position no order
             dd.set_decision(pred_side, cls.__calc_opt_size(ticks.price[i], ac), 'market', False, 10)
-        elif ac.holding_side =='' and (pred_side!= 'buy' or pred_side!= 'sell') and pred_side != ac.order_side and ac.order_type=='limit': #no position and order side != pred side and order type is limit
-            dd.set_decision(pred_side, 0,'', True, 10) #cancel order
-        elif ac.holding_side!='' and ac.order_side =='': #place pl order
-            dd.set_decision(pred_side, cls.__calc_opt_size(ticks.price[i], ac), 'limit', False, 1440)
-
+        elif (ac.holding_side == 'buy' or ac.holding_side == 'sell') and (pred_side =='buy' or pred_side == 'sell') and \
+                ac.holding_side != pred_side and ac.order_side != '' and ac.order_side != ac.holding_side and ac.order_type =='limit': #holding side != pred side and pl ordering -> cancel pl order
+            dd.set_decision(pred_side,0, 0,'', True, 10) #cancel order
+        elif (ac.holding_side == 'buy' or ac.holding_side == 'sell') and (pred_side =='buy' or pred_side == 'sell') and \
+                ac.holding_side != pred_side and ac.order_side =='':
+            dd.set_decision(pred_side, ac.holding_size + cls.__calc_opt_size(ticks.price[i], ac), 'market', False, 10)
+        elif ac.holding_side != '' and ac.order_side =='': #place pl order
+            dd.set_decision('buy' if ac.holding_side =='sell' else 'sell', ac.holding_price + pl_kijun if ac.holding_side == 'buy' else ac.holding_price - pl_kijun,
+                            ac.holding_size,'limit',False,360000)
         return dd
 
 

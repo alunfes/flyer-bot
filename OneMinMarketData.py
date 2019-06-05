@@ -3,13 +3,15 @@ from OneMinData import OneMinData
 import numpy as np
 import pandas as pd
 import talib as ta
-import datetime
+from datetime import datetime, timedelta, timezone
 
 
 
 '''
 using ta-lib for index calc.
 '''
+
+
 class OneMinMarketData:
     @classmethod
     def initialize_for_bot(cls, num_term, window_term, future_side_period, future_side_kijun, initial_data_vol):
@@ -25,14 +27,12 @@ class OneMinMarketData:
     def update_for_bot(cls):
         cls.__calc_all_index(True)
 
-
     @classmethod
     def read_from_csv(cls, file_name):
         ohlc = OneMinData()
         ohlc.initialize()
         df = pd.read_csv(file_name)
-        ohlc.dt = list(map(lambda x: datetime.datetime.strptime(str(x),'%Y-%m-%d %H:%M:%S'),list(df['dt'])))
-        #ohlc.dt = list(df['dt'])
+        ohlc.dt = list(map(lambda x: datetime.strptime(str(x), '%Y-%m-%d %H:%M:%S'), list(df['dt'])))
         ohlc.unix_time = list(df['unix_time'])
         ohlc.open = list(df['open'])
         ohlc.high = list(df['high'])
@@ -45,33 +45,32 @@ class OneMinMarketData:
     @jit
     def __calc_all_index(cls, flg_for_bot):
         num = round(cls.num_term / cls.window_term)
-        if num >1:
+        if num > 1:
             for i in range(num):
-                term = cls.window_term * (i+ 1)
+                term = cls.window_term * (i + 1)
                 if term > 1:
                     cls.ohlc.ema[term] = cls.__calc_ema(term, cls.ohlc.close)
                     cls.ohlc.ema_kairi[term] = cls.__calc_ema_kairi(term, cls.ohlc.close)
+                    cls.ohlc.ema_gra[term] = cls.__calc_ema_gra(term)
                     cls.ohlc.momentum[term] = cls.__calc_momentum(term, cls.ohlc.close)
                     cls.ohlc.rate_of_change[term] = cls.__calc_rate_of_change(term, cls.ohlc.close)
                     cls.ohlc.rsi[term] = cls.__calc_rsi(term, cls.ohlc.close)
-                    cls.ohlc.williams_R[term] = cls.__calc_williams_R(term,cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
+                    cls.ohlc.williams_R[term] = cls.__calc_williams_R(term, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
                     cls.ohlc.beta[term] = cls.__calc_beta(term, cls.ohlc.high, cls.ohlc.low)
                     cls.ohlc.tsf[term] = cls.__calc_time_series_forecast(term, cls.ohlc.close)
                     cls.ohlc.correl[term] = cls.__calc_correl(term, cls.ohlc.high, cls.ohlc.low)
-        cls.ohlc.normalized_ave_true_range = cls.__calc_normalized_ave_true_range(cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
+        cls.ohlc.normalized_ave_true_range = cls.__calc_normalized_ave_true_range(cls.ohlc.high, cls.ohlc.low,cls.ohlc.close)
         cls.ohlc.three_outside_updown = cls.__calc_three_outside_updown(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,cls.ohlc.close)
         cls.ohlc.breakway = cls.__calc_breakway(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
-        cls.ohlc.dark_cloud_cover = cls.__calc_dark_cloud_cover(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
-        cls.ohlc.dragonfly_doji = cls.__calc_dragonfly_doji(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,cls.ohlc.close)
-        cls.ohlc.updown_sidebyside_white_lines = cls.__calc_updown_sidebyside_white_lines(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
-        cls.ohlc.haramisen = cls.__calc_haramisen(cls.ohlc.open, cls.ohlc.high,cls.ohlc.low, cls.ohlc.close)
-        cls.ohlc.hikkake_pattern = cls.__calc_hikkake_pattern(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
-        cls.ohlc.neck_pattern = cls.__calc_neck_pattern(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,cls.ohlc.close)
-        cls.ohlc.upsidedownside_gap_three_method = cls.__calc_upsidedownside_gap_three_method(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
-        if flg_for_bot==False:
-            cls.ohlc.future_side = cls.calc_future_side(cls.future_side_period,cls.future_side_kijun,cls.ohlc)
-            cls.ohlc.future_change = cls.calc_future_change(cls.future_side_period,cls.ohlc)
-
+        cls.ohlc.dark_cloud_cover = cls.__calc_dark_cloud_cover(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,cls.ohlc.close)
+        cls.ohlc.dragonfly_doji = cls.__calc_dragonfly_doji(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
+        cls.ohlc.updown_sidebyside_white_lines = cls.__calc_updown_sidebyside_white_lines(cls.ohlc.open, cls.ohlc.high,cls.ohlc.low, cls.ohlc.close)
+        cls.ohlc.haramisen = cls.__calc_haramisen(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
+        cls.ohlc.hikkake_pattern = cls.__calc_hikkake_pattern(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,cls.ohlc.close)
+        cls.ohlc.neck_pattern = cls.__calc_neck_pattern(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
+        cls.ohlc.upsidedownside_gap_three_method = cls.__calc_upsidedownside_gap_three_method(cls.ohlc.open,cls.ohlc.high,cls.ohlc.low,cls.ohlc.close)
+        if flg_for_bot == False:
+            cls.ohlc.future_side = cls.calc_future_side(cls.future_side_period, cls.future_side_kijun, cls.ohlc)
 
     @classmethod
     def generate_df(cls):
@@ -83,14 +82,17 @@ class OneMinMarketData:
         df = df.assign(low=cls.ohlc.low[cls.num_term:end])
         df = df.assign(close=cls.ohlc.close[cls.num_term:end])
         df = df.assign(size=cls.ohlc.size[cls.num_term:end])
+
         def __make_col_df(df, data, col_name):
             for k in data:
                 col = col_name + str(k)
                 df = df.assign(col=data[k][cls.num_term:end])
                 df.rename(columns={'col': col}, inplace=True)
-                return df
+            return df
+
         df = __make_col_df(df, cls.ohlc.ema, 'ema')
-        df = __make_col_df(df, cls.ohlc.ema_kairi,'ema_kairi')
+        df = __make_col_df(df, cls.ohlc.ema_kairi, 'ema_kairi')
+        df = __make_col_df(df, cls.ohlc.ema_gra, 'ema_gra')
         df = __make_col_df(df, cls.ohlc.momentum, 'momentum')
         df = __make_col_df(df, cls.ohlc.rate_of_change, 'rate_of_change')
         df = __make_col_df(df, cls.ohlc.rsi, 'rsi')
@@ -109,7 +111,6 @@ class OneMinMarketData:
         df = df.assign(neck_pattern=cls.ohlc.neck_pattern[cls.num_term:end])
         df = df.assign(upsidedownside_gap_three_method=cls.ohlc.upsidedownside_gap_three_method[cls.num_term:end])
         df = df.assign(future_side=cls.ohlc.future_side[cls.num_term:])
-        df = df.assign(future_change=cls.ohlc.future_change[cls.num_term:])
         print('future side unique val')
         print(df['future_side'].value_counts(dropna=False, normalize=True))
         return df
@@ -128,9 +129,10 @@ class OneMinMarketData:
                 col = col_name + str(k)
                 df = df.assign(col=data[k][-1:])
                 df.rename(columns={'col': col}, inplace=True)
-                return df
+            return df
         df = __make_col_df(df, cls.ohlc.ema, 'ema')
         df = __make_col_df(df, cls.ohlc.ema_kairi, 'ema_kairi')
+        df = __make_col_df(df, cls.ohlc.ema_gra, 'ema_gra')
         df = __make_col_df(df, cls.ohlc.momentum, 'momentum')
         df = __make_col_df(df, cls.ohlc.rate_of_change, 'rate_of_change')
         df = __make_col_df(df, cls.ohlc.rsi, 'rsi')
@@ -169,151 +171,188 @@ class OneMinMarketData:
                 ohlc.future_side.append('no')
         return ohlc.future_side
 
-
-    @classmethod
-    @jit
-    def calc_future_change(cls, future_change_period, ohlc):
-        for i in range(len(ohlc.close) - future_change_period):
-            ohlc.future_change.append(ohlc.close[i+future_change_period] / ohlc.close[i])
-        return ohlc.future_change
-
-
     @classmethod
     @jit
     def __calc_ema(cls, term, close):
-        return list(ta.EMA(np.array(close,dtype='f8'), timeperiod=term))
+        return list(ta.EMA(np.array(close, dtype='f8'), timeperiod=term))
 
     @classmethod
     @jit
     def __calc_ema_kairi(cls, term, close):
         kairi = []
         ema = cls.__calc_ema(term, close)
-        for i,em in enumerate(ema):
+        for i, em in enumerate(ema):
             if np.isnan(em):
                 kairi.append(-1)
             else:
-                kairi.append(100.0*(close[i] - em) / em)
+                kairi.append(100.0 * (close[i] - em) / em)
         return kairi
 
     @classmethod
     @jit
-    def __calc_momentum(cls, term, close):
-        return list(ta.MOM(np.array(close,dtype='f8'), timeperiod=term))
+    def __calc_ema_gra(cls, term):
+        diff = []
+        for i in range(len(cls.ohlc.ema[term])):
+            if cls.ohlc.ema[term][i] == np.nan:
+                diff.append(np.nan)
+            else:
+                diff.append(cls.ohlc.ema[term][i] - cls.ohlc.ema[term][i - 1])
+        # return list(np.diff(cls.ohlc.ema[term]))
+        return diff
 
     @classmethod
     @jit
-    def __calc_rate_of_change(cls,term,close):
-        return list(ta.ROC(np.array(close,dtype='f8'), timeperiod=term))
+    def __calc_momentum(cls, term, close):
+        return list(ta.MOM(np.array(close, dtype='f8'), timeperiod=term))
+
+    @classmethod
+    @jit
+    def __calc_rate_of_change(cls, term, close):
+        return list(ta.ROC(np.array(close, dtype='f8'), timeperiod=term))
 
     @classmethod
     @jit
     def __calc_rsi(cls, term, close):
-        return list(ta.RSI(np.array(close,dtype='f8'), timeperiod=term))
+        return list(ta.RSI(np.array(close, dtype='f8'), timeperiod=term))
 
     @classmethod
     @jit
     def __calc_williams_R(cls, term, high, low, close):
-        return list(ta.WILLR(np.array(high,dtype='f8'), np.array(low,dtype='f8'), np.array(close,dtype='f8'), timeperiod=term))
+        return list(ta.WILLR(np.array(high, dtype='f8'), np.array(low, dtype='f8'), np.array(close, dtype='f8'),
+                             timeperiod=term))
 
     @classmethod
     @jit
     def __calc_beta(cls, term, high, low):
-        return list(ta.BETA(np.array(high,dtype='f8'), np.array(low,dtype='f8'), timeperiod=term))
+        return list(ta.BETA(np.array(high, dtype='f8'), np.array(low, dtype='f8'), timeperiod=term))
 
     @classmethod
     @jit
     def __calc_time_series_forecast(cls, term, close):
-        return list(ta.TSF(np.array(close,dtype='f8'), timeperiod=term))
+        return list(ta.TSF(np.array(close, dtype='f8'), timeperiod=term))
 
     @classmethod
     @jit
     def __calc_correl(cls, term, high, low):
-        return list(ta.CORREL(np.array(high,dtype='f8'), np.array(low,dtype='f8'), timeperiod=term))
+        return list(ta.CORREL(np.array(high, dtype='f8'), np.array(low, dtype='f8'), timeperiod=term))
 
     @classmethod
     @jit
     def __calc_normalized_ave_true_range(cls, high, low, close):
-        return list(ta.NATR(np.array(high,dtype='f8'), np.array(low,dtype='f8'), np.array(close,dtype='f8')))
-
+        return list(ta.NATR(np.array(high, dtype='f8'), np.array(low, dtype='f8'), np.array(close, dtype='f8')))
 
     @classmethod
     @jit
     def __calc_three_outside_updown(cls, open, high, low, close):
-        return list(ta.CDL3OUTSIDE(np.array(open,dtype='f8'), np.array(high,dtype='f8'), np.array(low,dtype='f8'), np.array(close,dtype='f8')))
+        return list(ta.CDL3OUTSIDE(np.array(open, dtype='f8'), np.array(high, dtype='f8'), np.array(low, dtype='f8'),
+                                   np.array(close, dtype='f8')))
 
     @classmethod
     @jit
     def __calc_breakway(cls, open, high, low, close):
-        return list(ta.CDLBREAKAWAY(np.array(open,dtype='f8'), np.array(high,dtype='f8'), np.array(low,dtype='f8'), np.array(close,dtype='f8')))
+        return list(ta.CDLBREAKAWAY(np.array(open, dtype='f8'), np.array(high, dtype='f8'), np.array(low, dtype='f8'),
+                                    np.array(close, dtype='f8')))
 
     @classmethod
     @jit
     def __calc_dark_cloud_cover(cls, open, high, low, close):
-        return list(ta.CDLDARKCLOUDCOVER(np.array(open,dtype='f8'), np.array(high,dtype='f8'), np.array(low,dtype='f8'), np.array(close,dtype='f8'),penetration=0))
+        return list(
+            ta.CDLDARKCLOUDCOVER(np.array(open, dtype='f8'), np.array(high, dtype='f8'), np.array(low, dtype='f8'),
+                                 np.array(close, dtype='f8'), penetration=0))
 
     @classmethod
     @jit
     def __calc_dragonfly_doji(cls, open, high, low, close):
-        return list(ta.CDLDRAGONFLYDOJI(np.array(open,dtype='f8'), np.array(high,dtype='f8'), np.array(low,dtype='f8'), np.array(close,dtype='f8')))
+        return list(
+            ta.CDLDRAGONFLYDOJI(np.array(open, dtype='f8'), np.array(high, dtype='f8'), np.array(low, dtype='f8'),
+                                np.array(close, dtype='f8')))
 
     @classmethod
     @jit
     def __calc_updown_sidebyside_white_lines(cls, open, high, low, close):
-        return list(ta.CDLGAPSIDESIDEWHITE(np.array(open,dtype='f8'), np.array(high,dtype='f8'), np.array(low,dtype='f8'), np.array(close,dtype='f8')))
+        return list(
+            ta.CDLGAPSIDESIDEWHITE(np.array(open, dtype='f8'), np.array(high, dtype='f8'), np.array(low, dtype='f8'),
+                                   np.array(close, dtype='f8')))
 
     @classmethod
     @jit
     def __calc_haramisen(cls, open, high, low, close):
-        return list(ta.CDLHARAMI(np.array(open,dtype='f8'), np.array(high,dtype='f8'), np.array(low,dtype='f8'), np.array(close,dtype='f8')))
+        return list(ta.CDLHARAMI(np.array(open, dtype='f8'), np.array(high, dtype='f8'), np.array(low, dtype='f8'),
+                                 np.array(close, dtype='f8')))
 
     @classmethod
     @jit
     def __calc_hikkake_pattern(cls, open, high, low, close):
-        return list(ta.CDLHIKKAKEMOD(np.array(open,dtype='f8'), np.array(high,dtype='f8'), np.array(low,dtype='f8'), np.array(close,dtype='f8')))
+        return list(ta.CDLHIKKAKEMOD(np.array(open, dtype='f8'), np.array(high, dtype='f8'), np.array(low, dtype='f8'),
+                                     np.array(close, dtype='f8')))
 
     @classmethod
     @jit
     def __calc_neck_pattern(cls, open, high, low, close):
-        return list(ta.CDLINNECK(np.array(open,dtype='f8'), np.array(high,dtype='f8'), np.array(low,dtype='f8'), np.array(close,dtype='f8')))
+        return list(ta.CDLINNECK(np.array(open, dtype='f8'), np.array(high, dtype='f8'), np.array(low, dtype='f8'),
+                                 np.array(close, dtype='f8')))
 
     @classmethod
     @jit
     def __calc_upsidedownside_gap_three_method(cls, open, high, low, close):
-        return list(ta.CDLXSIDEGAP3METHODS(np.array(open,dtype='f8'), np.array(high,dtype='f8'), np.array(low,dtype='f8'), np.array(close,dtype='f8')))
+        return list(
+            ta.CDLXSIDEGAP3METHODS(np.array(open, dtype='f8'), np.array(high, dtype='f8'), np.array(low, dtype='f8'),
+                                   np.array(close, dtype='f8')))
 
     @classmethod
-    @jit
-    def generate_tick_pred_data(cls, ohlc, prediction, start_ind): #assume index 0 of ohlc and prediction is matched
+    def check_matched_index(cls, test_x):
+        key = list(cls.ohlc.ema_kairi.keys())[0]
+        test = list(test_x['ema_kairi' + str(key)])
+        kairi = cls.ohlc.ema_kairi[key]
+        for i in range(len(kairi)):
+            flg = True
+            for j in range(30):
+                if test[j] != kairi[i + j]:
+                    flg = False
+                    break
+            if flg:
+                return i
+        return -1
+
+    @classmethod
+    def generate_tick_pred_data(cls, prediction, start_ind):  # assume index 0 of ohlc and prediction is matched
         tick = []
         dt = []
         ut = []
-        start_dt = ohlc.dt[0]
-        start_ut = ohlc.unix_time[0]
+        stdata = SimTickData()
+        start_dt = cls.ohlc.dt[0]
+        start_ut = cls.ohlc.unix_time[0]
         pred = []
         split_num = 60
-        ohlc.del_data(len(ohlc.close)-start_ind)
+        cls.ohlc.del_data(len(cls.ohlc.close) - start_ind)
         for i in range(len(prediction)):
             om_tick = []
-            if ohlc.open[i] < ohlc.close[i]:  # open, low, high, close
-                ol = ohlc.open[i] - ohlc.low[i]
-                lh = ohlc.high[i] - ohlc.low[i]
-                hc = ohlc.high[i] - ohlc.close[i]
+            if cls.ohlc.open[i] < cls.ohlc.close[i]:  # open, low, high, close
+                ol = cls.ohlc.open[i] - cls.ohlc.low[i]
+                lh = cls.ohlc.high[i] - cls.ohlc.low[i]
+                hc = cls.ohlc.high[i] - cls.ohlc.close[i]
                 sec_width = (ol + lh + hc) / split_num
                 if sec_width > 0:
-                    om_tick.extend(list(np.round(np.linspace(ohlc.open[i], ohlc.low[i], round(ol / sec_width)))))
-                    om_tick.extend(list(np.round(np.linspace(ohlc.low[i], ohlc.high[i], round(lh / sec_width)))))
-                    om_tick.extend(list(np.round(np.linspace(ohlc.high[i], ohlc.close[i], round(hc / sec_width)))))
+                    om_tick.extend(
+                        list(np.round(np.linspace(cls.ohlc.open[i], cls.ohlc.low[i], round(ol / sec_width)))))
+                    om_tick.extend(
+                        list(np.round(np.linspace(cls.ohlc.low[i], cls.ohlc.high[i], round(lh / sec_width)))))
+                    om_tick.extend(
+                        list(np.round(np.linspace(cls.ohlc.high[i], cls.ohlc.close[i], round(hc / sec_width)))))
                 else:
                     om_tick.extend([tick[-1]] * split_num)
             else:  # open, high, low, close
-                oh = ohlc.high[i] - ohlc.open[i]
-                hl = ohlc.high[i] - ohlc.low[i]
-                lc = ohlc.close[i] - ohlc.low[i]
+                oh = cls.ohlc.high[i] - cls.ohlc.open[i]
+                hl = cls.ohlc.high[i] - cls.ohlc.low[i]
+                lc = cls.ohlc.close[i] - cls.ohlc.low[i]
                 sec_width = (oh + hl + lc) / split_num
                 if sec_width > 0:
-                    om_tick.extend(list(np.round(np.linspace(ohlc.open[i], ohlc.high[i], round(oh / sec_width)))))
-                    om_tick.extend(list(np.round(np.linspace(ohlc.high[i], ohlc.low[i], round(hl / sec_width)))))
-                    om_tick.extend(list(np.round(np.linspace(ohlc.low[i], ohlc.close[i], round(lc / sec_width)))))
+                    om_tick.extend(
+                        list(np.round(np.linspace(cls.ohlc.open[i], cls.ohlc.high[i], round(oh / sec_width)))))
+                    om_tick.extend(
+                        list(np.round(np.linspace(cls.ohlc.high[i], cls.ohlc.low[i], round(hl / sec_width)))))
+                    om_tick.extend(
+                        list(np.round(np.linspace(cls.ohlc.low[i], cls.ohlc.close[i], round(lc / sec_width)))))
                 else:
                     om_tick.extend([tick[-1]] * split_num)
             if split_num - len(om_tick) > 0:
@@ -321,12 +360,16 @@ class OneMinMarketData:
             elif split_num - len(om_tick) < 0:
                 del om_tick[-(len(om_tick) - split_num):]
             tick.extend(om_tick)
-            ut.extend([start_ut + (i+1) for i in range(split_num)])
-            dt.extend([start_dt+datetime.timedelta(seconds=i+1) for i in range(split_num)])
+            ut.extend([start_ut + (j + 1) for j in range(split_num)])
+            dt.extend([start_dt + timedelta(seconds=k + 1) for k in range(split_num)])
             start_ut = ut[-1]
             start_dt = dt[-1]
-            if i ==0:
+            if i == 0:
                 pred.extend([0] * split_num)
             else:
-                pred.extend([prediction[i-1]] * split_num)
-        return (tick, ut, dt, pred)
+                pred.extend([prediction[i - 1]] * split_num)
+        stdata.dt.extend(dt)
+        stdata.ut.extend(ut)
+        stdata.price.extend(tick)
+        stdata.prediction.extend(pred)
+        return stdata

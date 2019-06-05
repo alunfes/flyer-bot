@@ -156,7 +156,9 @@ class BotAccount:
             if exec[self.order_side + "_child_order_acceptance_id"] == self.order_id:
                 size.append(exec["size"])
                 price.append(exec["price"])
-        ave_p = round(sum(price[i] * size[i] for i in range(len(price))) / sum(size))
+        ave_p = 0
+        if sum(size) > 0:
+            ave_p = round(sum(price[i] * size[i] for i in range(len(price))) / sum(size))
         if abs(sum(size) - self.order_executed_size + self.order_outstanding_size) <= 0.00001: #order has been fully executed
             print(self.order_side+' order has been fully executed.'+'price='+str(ave_p)+', size='+str(sum(size)))
             self.update_holding(self.order_side,ave_p,self.order_outstanding_size+self.order_executed_size,self.order_id)
@@ -164,7 +166,7 @@ class BotAccount:
             return self.order_side+' order has been fully executed.'+'price='+str(ave_p)+', size='+str(sum(size))
         elif sum(size) > self.order_executed_size:
             print(self.order_side + ' order has been partially executed.' + 'price=' + str(ave_p) + ', size=' + str(sum(size) - self.order_executed_size))
-            self.update_holding(self.order_side, ave_p, str(sum(size) - self.order_executed_size), self.order_id)
+            self.update_holding(self.order_side, ave_p, sum(size) - self.order_executed_size, self.order_id)
             self.update_order(self.order_side,self.order_price,sum(size), self.order_outstanding_size+self.order_executed_size - sum(size),self.order_id,self.order_expire,self.order_status)
             return self.order_side + ' order has been partially executed.' + 'price=' + str(ave_p) + ', size=' + str(sum(size) - self.order_executed_size)
         return ''

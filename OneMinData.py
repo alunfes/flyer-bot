@@ -13,6 +13,7 @@ class OneMinData:
         self.size = []
         self.ema = {}
         self.ema_kairi = {}
+        self.ema_gra = {}
         self.rsi = {}
         self.momentum = {}
         self.rate_of_change = {}
@@ -31,7 +32,6 @@ class OneMinData:
         self.neck_pattern = []
         self.upsidedownside_gap_three_method = []
         self.future_side = []
-        self.future_change = [] #use for regression
 
     def cut_data(self, num_data):
         self.unix_time = self.unix_time[-num_data:]
@@ -43,6 +43,7 @@ class OneMinData:
         self.size = self.size[-num_data:]
         for k in self.ema: #assume term is same in all index
             self.ema_kairi[k] = self.ema_kairi[k][-num_data:]
+            self.ema_gra[k] = self.ema_gra[k][-num_data:]
             self.rsi[k] = self.rsi[k][-num_data:]
             self.momentum[k] = self.momentum[k][-num_data:]
             self.rate_of_change[k] = self.rate_of_change[k][-num_data:]
@@ -62,7 +63,6 @@ class OneMinData:
         self.neck_pattern = self.neck_pattern[-num_data:]
         self.upsidedownside_gap_three_method = self.upsidedownside_gap_three_method[-num_data:]
         self.future_side = self.future_side[-num_data:]
-        self.future_change = self.future_change[-num_data:]
 
     @jit
     def del_data(self, num_remain_data):
@@ -76,6 +76,7 @@ class OneMinData:
             del self.size[:-num_remain_data]
             for k in self.ema: #assume term is same in all index
                 del self.ema_kairi[k][:-num_remain_data]
+                del self.ema_gra[k][:-num_remain_data]
                 del self.rsi[k][:-num_remain_data]
                 del self.momentum[k][:-num_remain_data]
                 del self.rate_of_change[k][:-num_remain_data]
@@ -95,7 +96,6 @@ class OneMinData:
             del self.neck_pattern[:-num_remain_data]
             del self.upsidedownside_gap_three_method[:-num_remain_data]
             del self.future_side[:-num_remain_data]
-            del self.future_change[:-num_remain_data]
 
     def add_and_pop(self, unix_time, dt, open, high, low, close, size):
         self.unix_time.append(unix_time)

@@ -1,5 +1,6 @@
 from datetime import datetime
 from catboost import Pool
+from LgbModel import LgbModel
 from BotAccount import BotAccount
 from LogMaster import LogMaster
 from Trade import Trade
@@ -28,6 +29,7 @@ class FlyerBot:
         self.last_sync_ut = datetime.now(self.JST).timestamp()
         self.model = None
         self.cbm = None
+        self.bst = None
         self.prediction = [0]
         self.pred_side = ''
 
@@ -135,7 +137,6 @@ class FlyerBot:
             elif (self.ac.holding_side == 'buy' and (self.prediction[0] == 2)) or (self.ac.holding_side == 'sell' and (self.prediction[0] == 1)):  # ポジションが判定と逆の時にexit,　もしplがあればキャンセル。。
                 if self.ac.order_status != '':
                     self.cancel_order() #最初にキャンセルしないとexit order出せない。
-                #self.exit_order()
                 self.entry_market_order(self.pred_side, round(self.ac.holding_size * 2,2))
             elif self.ac.holding_side != '' and self.ac.order_side != '':#sleep until next ohlc update when prediction is same as
                 time.sleep(1)
@@ -160,10 +161,12 @@ class FlyerBot:
         print('bot - initializing MarketData..')
         OneMinMarketData.initialize_for_bot(num_term, window_term, future_period, pl_kijun, num_term + 1)
         self.model = CatModel()
+        #self.model = LgbModel()
         print('bot - generating training data')
         LogMaster.add_log('bot - training xgb model..', self.prediction[0], self.ac)
         print('bot - training model..')
         self.cbm = self.model.read_dump_model('./Model/cat_model.dat')
+        #self.bst = self.model.load_model('./Model/lgb_model.dat')
         print('bot - load cat model completed..')
         print('bot - started bot loop.')
         LogMaster.add_log('action_message - bot - started bot loop.', self.prediction[0], self.ac)
@@ -216,6 +219,7 @@ class FlyerBot:
                 df = OneMinMarketData.generate_df_for_bot()
                 pred_x = self.model.generate_bot_pred_data(df)
                 self.prediction = self.cbm.predict(Pool(pred_x))
+                #self.prediction = self.bst.prediction(self.model, train_xx, predction_kijun)
                 if len(self.prediction) > 1:
                     print('prediction length error!')
                 self.pred_side = str(int(self.prediction[0][0])).translate(str.maketrans({'0': 'no', '1': 'buy', '2': 'sell', '3': 'both'}))
@@ -226,8 +230,8 @@ class FlyerBot:
                                                                   OneMinMarketData.ohlc.high[-1],
                                                                   OneMinMarketData.ohlc.low[-1],
                                                                   OneMinMarketData.ohlc.close[-1]))
-            print('total_pl={}, pl per min={}, num_trade={},win_rate={},prediction={},holding_side={},holding_price={},holding_size={}'.
-                  format(self.ac.total_pl,self.ac.total_pl_per_min,self.ac.num_trade,self.ac.win_rate,self.prediction[0],self.ac.holding_side,self.ac.holding_price,self.ac.holding_size))
+            print('total_pl={}, pl per min={}, collateral change={},num_trade={},win_rate={},prediction={},holding_side={},holding_price={},holding_size={}'.
+                  format(self.ac.total_pl,self.ac.total_pl_per_min,self.ac.collateral_change,self.ac.num_trade,self.ac.win_rate,self.prediction[0],self.ac.holding_side,self.ac.holding_price,self.ac.holding_size))
             print('private access per 300sec={}'.format(Trade.total_access_per_300s))
             LineNotification.send_notification(LogMaster.get_latest_performance())
 
@@ -266,6 +270,6 @@ if __name__ == '__main__':
     LogMaster.initialize()
     LineNotification.initialize()
     fb = FlyerBot()
-    fb.start_flyer_bot(500,2,100000,11) #num_term, window_term, pl_kijun, future_period
+    fb.start_flyer_bot(1000,10,100000,11) #num_term, window_term, pl_kijun, future_period
     #'JRF20190526-142616-930215'
     #JRF20190526-143431-187560
