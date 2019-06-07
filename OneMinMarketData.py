@@ -19,7 +19,7 @@ class OneMinMarketData:
         cls.window_term = window_term
         cls.future_side_period = future_side_period
         cls.future_side_kijun = future_side_kijun
-        cls.ohlc = cls.read_from_csv('/Users/alun/Projects/flyer-bot/Data/one_min_data.csv')
+        cls.ohlc = cls.read_from_csv('/content/drive/My Drive/one_min_data.csv')
         cls.ohlc.del_data(initial_data_vol)
         cls.__calc_all_index(False)
 
@@ -52,6 +52,10 @@ class OneMinMarketData:
                     cls.ohlc.ema[term] = cls.__calc_ema(term, cls.ohlc.close)
                     cls.ohlc.ema_kairi[term] = cls.__calc_ema_kairi(term, cls.ohlc.close)
                     cls.ohlc.ema_gra[term] = cls.__calc_ema_gra(term)
+                    cls.ohlc.dema[term] = cls.__calc_dema(term, cls.ohlc.close)
+                    cls.ohlc.dema_kairi[term] = cls.__calc_dema_kairi(term, cls.ohlc.close)
+                    cls.ohlc.dema_gra[term] = cls.__calc_dema_gra(term)
+                    cls.ohlc.midprice[term] = cls.__calc_midprice(term, cls.ohlc.high, cls.ohlc.low)
                     cls.ohlc.momentum[term] = cls.__calc_momentum(term, cls.ohlc.close)
                     cls.ohlc.rate_of_change[term] = cls.__calc_rate_of_change(term, cls.ohlc.close)
                     cls.ohlc.rsi[term] = cls.__calc_rsi(term, cls.ohlc.close)
@@ -59,16 +63,36 @@ class OneMinMarketData:
                     cls.ohlc.beta[term] = cls.__calc_beta(term, cls.ohlc.high, cls.ohlc.low)
                     cls.ohlc.tsf[term] = cls.__calc_time_series_forecast(term, cls.ohlc.close)
                     cls.ohlc.correl[term] = cls.__calc_correl(term, cls.ohlc.high, cls.ohlc.low)
-        cls.ohlc.normalized_ave_true_range = cls.__calc_normalized_ave_true_range(cls.ohlc.high, cls.ohlc.low,cls.ohlc.close)
-        cls.ohlc.three_outside_updown = cls.__calc_three_outside_updown(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,cls.ohlc.close)
+                    cls.ohlc.adx[term] = cls.__calc_adx(term, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
+                    cls.ohlc.aroon_os[term] = cls.__calc_aroon_os(term, cls.ohlc.high, cls.ohlc.low)
+                    cls.ohlc.cci[term] = cls.__calc_cci(term, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
+                    cls.ohlc.dx[term] = cls.__calc_dx(term, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
+                    if term >= 10:
+                        cls.ohlc.macd[term], cls.ohlc.macdsignal[term], cls.ohlc.macdhist[term] = cls.__calc_macd(
+                            cls.ohlc.close, int(float(term) / 2.0), term, int(float(term) / 3.0))
+                        cls.ohlc.macd[term] = list(cls.ohlc.macd[term])
+                        cls.ohlc.macdsignal[term] = list(cls.ohlc.macdsignal[term])
+                        cls.ohlc.macdhist[term] = list(cls.ohlc.macdhist[term])
+        cls.ohlc.normalized_ave_true_range = cls.__calc_normalized_ave_true_range(cls.ohlc.high, cls.ohlc.low,
+                                                                                  cls.ohlc.close)
+        cls.ohlc.three_outside_updown = cls.__calc_three_outside_updown(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,
+                                                                        cls.ohlc.close)
         cls.ohlc.breakway = cls.__calc_breakway(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
-        cls.ohlc.dark_cloud_cover = cls.__calc_dark_cloud_cover(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,cls.ohlc.close)
+        cls.ohlc.dark_cloud_cover = cls.__calc_dark_cloud_cover(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,
+                                                                cls.ohlc.close)
         cls.ohlc.dragonfly_doji = cls.__calc_dragonfly_doji(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
-        cls.ohlc.updown_sidebyside_white_lines = cls.__calc_updown_sidebyside_white_lines(cls.ohlc.open, cls.ohlc.high,cls.ohlc.low, cls.ohlc.close)
+        cls.ohlc.updown_sidebyside_white_lines = cls.__calc_updown_sidebyside_white_lines(cls.ohlc.open, cls.ohlc.high,
+                                                                                          cls.ohlc.low, cls.ohlc.close)
         cls.ohlc.haramisen = cls.__calc_haramisen(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
-        cls.ohlc.hikkake_pattern = cls.__calc_hikkake_pattern(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,cls.ohlc.close)
+        cls.ohlc.hikkake_pattern = cls.__calc_hikkake_pattern(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,
+                                                              cls.ohlc.close)
         cls.ohlc.neck_pattern = cls.__calc_neck_pattern(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
-        cls.ohlc.upsidedownside_gap_three_method = cls.__calc_upsidedownside_gap_three_method(cls.ohlc.open,cls.ohlc.high,cls.ohlc.low,cls.ohlc.close)
+        cls.ohlc.upsidedownside_gap_three_method = cls.__calc_upsidedownside_gap_three_method(cls.ohlc.open,
+                                                                                              cls.ohlc.high,
+                                                                                              cls.ohlc.low,
+                                                                                              cls.ohlc.close)
+        cls.ohlc.sar = cls.__calc_sar(cls.ohlc.high, cls.ohlc.low, 0.02, 0.2)
+        cls.ohlc.bop = cls.__calc_bop(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
         if flg_for_bot == False:
             cls.ohlc.future_side = cls.calc_future_side(cls.future_side_period, cls.future_side_kijun, cls.ohlc)
 
@@ -92,7 +116,11 @@ class OneMinMarketData:
 
         df = __make_col_df(df, cls.ohlc.ema, 'ema')
         df = __make_col_df(df, cls.ohlc.ema_kairi, 'ema_kairi')
+        df = __make_col_df(df, cls.ohlc.dema_kairi, 'dema_kairi')
         df = __make_col_df(df, cls.ohlc.ema_gra, 'ema_gra')
+        df = __make_col_df(df, cls.ohlc.dema, 'dema')
+        df = __make_col_df(df, cls.ohlc.dema_gra, 'dema_gra')
+        df = __make_col_df(df, cls.ohlc.midprice, 'midprice')
         df = __make_col_df(df, cls.ohlc.momentum, 'momentum')
         df = __make_col_df(df, cls.ohlc.rate_of_change, 'rate_of_change')
         df = __make_col_df(df, cls.ohlc.rsi, 'rsi')
@@ -100,6 +128,13 @@ class OneMinMarketData:
         df = __make_col_df(df, cls.ohlc.beta, 'beta')
         df = __make_col_df(df, cls.ohlc.tsf, 'tsf')
         df = __make_col_df(df, cls.ohlc.correl, 'correl')
+        df = __make_col_df(df, cls.ohlc.adx, 'adx')
+        df = __make_col_df(df, cls.ohlc.aroon_os, 'aroon_os')
+        df = __make_col_df(df, cls.ohlc.cci, 'cci')
+        df = __make_col_df(df, cls.ohlc.dx, 'dx')
+        df = __make_col_df(df, cls.ohlc.macd, 'macd')
+        df = __make_col_df(df, cls.ohlc.macdsignal, 'macdsignal')
+        df = __make_col_df(df, cls.ohlc.macdhist, 'macdhist')
         df = df.assign(normalized_ave_true_range=cls.ohlc.normalized_ave_true_range[cls.num_term:end])
         df = df.assign(three_outside_updown=cls.ohlc.three_outside_updown[cls.num_term:end])
         df = df.assign(breakway=cls.ohlc.breakway[cls.num_term:end])
@@ -110,6 +145,8 @@ class OneMinMarketData:
         df = df.assign(hikkake_pattern=cls.ohlc.hikkake_pattern[cls.num_term:end])
         df = df.assign(neck_pattern=cls.ohlc.neck_pattern[cls.num_term:end])
         df = df.assign(upsidedownside_gap_three_method=cls.ohlc.upsidedownside_gap_three_method[cls.num_term:end])
+        df = df.assign(sar=cls.ohlc.sar[cls.num_term:end])
+        df = df.assign(bop=cls.ohlc.bop[cls.num_term:end])
         df = df.assign(future_side=cls.ohlc.future_side[cls.num_term:])
         print('future side unique val')
         print(df['future_side'].value_counts(dropna=False, normalize=True))
@@ -124,15 +161,21 @@ class OneMinMarketData:
         df = df.assign(low=cls.ohlc.low[-1:])
         df = df.assign(close=cls.ohlc.close[-1:])
         df = df.assign(size=cls.ohlc.size[-1:])
+
         def __make_col_df(df, data, col_name):
             for k in data:
                 col = col_name + str(k)
                 df = df.assign(col=data[k][-1:])
                 df.rename(columns={'col': col}, inplace=True)
             return df
+
         df = __make_col_df(df, cls.ohlc.ema, 'ema')
         df = __make_col_df(df, cls.ohlc.ema_kairi, 'ema_kairi')
+        df = __make_col_df(df, cls.ohlc.dema_kairi, 'dema_kairi')
         df = __make_col_df(df, cls.ohlc.ema_gra, 'ema_gra')
+        df = __make_col_df(df, cls.ohlc.dema, 'dema')
+        df = __make_col_df(df, cls.ohlc.dema_gra, 'dema_gra')
+        df = __make_col_df(df, cls.ohlc.midprice, 'midprice')
         df = __make_col_df(df, cls.ohlc.momentum, 'momentum')
         df = __make_col_df(df, cls.ohlc.rate_of_change, 'rate_of_change')
         df = __make_col_df(df, cls.ohlc.rsi, 'rsi')
@@ -140,6 +183,13 @@ class OneMinMarketData:
         df = __make_col_df(df, cls.ohlc.beta, 'beta')
         df = __make_col_df(df, cls.ohlc.tsf, 'tsf')
         df = __make_col_df(df, cls.ohlc.correl, 'correl')
+        df = __make_col_df(df, cls.ohlc.adx, 'adx')
+        df = __make_col_df(df, cls.ohlc.aroon_os, 'aroon_os')
+        df = __make_col_df(df, cls.ohlc.cci, 'cci')
+        df = __make_col_df(df, cls.ohlc.dx, 'dx')
+        df = __make_col_df(df, cls.ohlc.macd, 'macd')
+        df = __make_col_df(df, cls.ohlc.macdsignal, 'macdsignal')
+        df = __make_col_df(df, cls.ohlc.macdhist, 'macdhist')
         df = df.assign(normalized_ave_true_range=cls.ohlc.normalized_ave_true_range[-1:])
         df = df.assign(three_outside_updown=cls.ohlc.three_outside_updown[-1:])
         df = df.assign(breakway=cls.ohlc.breakway[-1:])
@@ -149,6 +199,8 @@ class OneMinMarketData:
         df = df.assign(haramisen=cls.ohlc.haramisen[-1:])
         df = df.assign(hikkake_pattern=cls.ohlc.hikkake_pattern[-1:])
         df = df.assign(neck_pattern=cls.ohlc.neck_pattern[-1:])
+        df = df.assign(sar=cls.ohlc.sar[-1:])
+        df = df.assign(bop=cls.ohlc.bop[-1:])
         df = df.assign(upsidedownside_gap_three_method=cls.ohlc.upsidedownside_gap_three_method[-1:])
         return df
 
@@ -180,8 +232,18 @@ class OneMinMarketData:
     @jit
     def __calc_ema_kairi(cls, term, close):
         kairi = []
-        ema = cls.__calc_ema(term, close)
-        for i, em in enumerate(ema):
+        for i, em in enumerate(cls.ohlc.ema[term]):
+            if np.isnan(em):
+                kairi.append(-1)
+            else:
+                kairi.append(100.0 * (close[i] - em) / em)
+        return kairi
+
+    @classmethod
+    @jit
+    def __calc_dema_kairi(cls, term, close):
+        kairi = []
+        for i, em in enumerate(cls.ohlc.dema[term]):
             if np.isnan(em):
                 kairi.append(-1)
             else:
@@ -199,6 +261,56 @@ class OneMinMarketData:
                 diff.append(cls.ohlc.ema[term][i] - cls.ohlc.ema[term][i - 1])
         # return list(np.diff(cls.ohlc.ema[term]))
         return diff
+
+    @classmethod
+    @jit
+    def __calc_dema_gra(cls, term):
+        diff = []
+        for i in range(len(cls.ohlc.dema[term])):
+            if cls.ohlc.dema[term][i] == np.nan:
+                diff.append(np.nan)
+            else:
+                diff.append(cls.ohlc.dema[term][i] - cls.ohlc.dema[term][i - 1])
+        return diff
+
+    @classmethod
+    @jit
+    def __calc_dema(cls, term, close):
+        return list(ta.DEMA(np.array(close, dtype='f8'), timeperiod=term))
+
+    @classmethod
+    @jit
+    def __calc_adx(cls, term, high, low, close):
+        return list(
+            ta.ADX(np.array(high, dtype='f8'), np.array(low, dtype='f8'), np.array(close, dtype='f8'), timeperiod=term))
+
+    @classmethod
+    @jit
+    def __calc_aroon_os(cls, term, high, low):
+        return list(ta.AROONOSC(np.array(high, dtype='f8'), np.array(low, dtype='f8'), timeperiod=term))
+
+    @classmethod
+    @jit
+    def __calc_cci(cls, term, high, low, close):
+        return list(
+            ta.CCI(np.array(high, dtype='f8'), np.array(low, dtype='f8'), np.array(close, dtype='f8'), timeperiod=term))
+
+    @classmethod
+    @jit
+    def __calc_dx(cls, term, high, low, close):
+        return list(
+            ta.DX(np.array(high, dtype='f8'), np.array(low, dtype='f8'), np.array(close, dtype='f8'), timeperiod=term))
+
+    @classmethod
+    @jit
+    def __calc_midprice(cls, term, high, low):
+        return list(ta.MIDPRICE(np.array(high, dtype='f8'), np.array(low, dtype='f8'), timeperiod=term))
+
+    @classmethod
+    @jit
+    def __calc_macd(cls, close, fastperiod=12, slowperiod=26, signalperiod=9):
+        return ta.MACD(np.array(close, dtype='f8'), np.array(fastperiod, dtype='i8'), np.array(slowperiod, dtype='i8'),
+                       np.array(signalperiod, dtype='i8'))
 
     @classmethod
     @jit
@@ -291,6 +403,18 @@ class OneMinMarketData:
     def __calc_neck_pattern(cls, open, high, low, close):
         return list(ta.CDLINNECK(np.array(open, dtype='f8'), np.array(high, dtype='f8'), np.array(low, dtype='f8'),
                                  np.array(close, dtype='f8')))
+
+    @classmethod
+    @jit
+    def __calc_sar(cls, high, low, accelation, maximum):
+        return list(ta.SAR(np.array(high, dtype='f8'), np.array(low, dtype='f8'), np.array(accelation, dtype='f8'),
+                           np.array(maximum, dtype='f8')))
+
+    @classmethod
+    @jit
+    def __calc_bop(cls, open, high, low, close):
+        return list(ta.BOP(np.array(open, dtype='f8'), np.array(high, dtype='f8'), np.array(low, dtype='f8'),
+                           np.array(close, dtype='f8')))
 
     @classmethod
     @jit

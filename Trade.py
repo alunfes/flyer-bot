@@ -39,7 +39,7 @@ class Trade:
 
     @classmethod
     def __read_keys(cls):
-        file = open('/Users/alun/Projects/flyer-tick-bot/ignore/ex.txt', 'r')  # 読み込みモードでオープン
+        file = open('/Users/alun/Projects/flyer-bot/ignore/ex.txt', 'r')  # 読み込みモードでオープン
         cls.secret_key = file.readline().split(':')[1]
         cls.secret_key = cls.secret_key[:len(cls.secret_key) - 1]
         cls.api_key = file.readline().split(':')[1]
