@@ -24,6 +24,13 @@ class LgbModel:
         return train_x, test_x, train_y, test_y
 
     @jit
+    def generate_bot_pred_data(self, df: pd.DataFrame):
+        if 'future_side' in df.columns:
+            return df.drop(['dt', 'open', 'high', 'low', 'close', 'size', 'future_side'], axis=1)
+        else:
+            return df.drop(['dt', 'open', 'high', 'low', 'close', 'size'], axis=1)
+
+    @jit
     def train(self, train_x, train_y):
         print('training data description')
         print('train_x:', train_x.shape)
@@ -37,7 +44,7 @@ class LgbModel:
         return model
 
     def load_model(self, path):
-        with open('/content/drive/My Drive/Model/lgb_model.dat', 'rb') as f:
+        with open('/Users/alun/Projects/flyer-bot/Model/lgb_model.dat', 'rb') as f:
             return pickle.load(f)
 
     def prediction(self, model, test_x, pred_kijun):
@@ -52,6 +59,14 @@ class LgbModel:
                 prediction.append(3)
             else:
                 prediction.append(0)
+        return prediction
+
+
+    def prediction2(self, model, test_x):
+        prediction = []
+        pval = model.predict(test_x, num_iteration=model.best_iteration)
+        for p in pval:
+            prediction.append(p.argmax())
         return prediction
 
     @jit

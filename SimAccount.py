@@ -162,7 +162,7 @@ class SimAccount:
 
 
     def __calc_executed_pl(self,exec_price,i): #assume all order size was executed
-        pl = (exec_price - self.holding_price) * self.order_size if self.holding_side == 'buy' else (self.holding_price - exec_price) * self.order_size
+        pl = (exec_price - self.holding_price - self.slip_page ) * self.order_size if self.holding_side == 'buy' else (self.holding_price - exec_price - self.slip_page) * self.order_size
         self.realized_pl += round(pl)
         self.num_trade += 1
         if pl >0:

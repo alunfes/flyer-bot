@@ -19,7 +19,7 @@ class OneMinMarketData:
         cls.window_term = window_term
         cls.future_side_period = future_side_period
         cls.future_side_kijun = future_side_kijun
-        cls.ohlc = cls.read_from_csv('./Data/one_min_data.csv')
+        cls.ohlc = cls.read_from_csv('/Users/alun/Projects/flyer-bot/Data/one_min_data.csv')
         cls.ohlc.del_data(initial_data_vol)
         cls.__calc_all_index(False)
 
