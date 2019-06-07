@@ -222,7 +222,8 @@ class FlyerBot:
                 self.prediction = self.model.prediction2(self.bst, pred_x)
                 if len(self.prediction) > 1:
                     print('prediction length error!')
-                self.pred_side = str(int(self.prediction[0][0])).translate(str.maketrans({'0': 'no', '1': 'buy', '2': 'sell', '3': 'both'}))
+                print(self.prediction)
+                self.pred_side = str(int(self.prediction[0])).translate(str.maketrans({'0': 'no', '1': 'buy', '2': 'sell', '3': 'both'}))
             self.ac.sync_position_order()
             self.ac.calc_pl(TickData.get_ltp())
             print('dt={}, open={},high={},low={},close={}'.format(OneMinMarketData.ohlc.dt[-1],
