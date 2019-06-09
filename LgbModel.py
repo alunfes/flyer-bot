@@ -13,7 +13,8 @@ class LgbModel:
     def generate_data(self, df: pd.DataFrame, test_size=0.2):
         dff = df
         dff['future_side'] = dff['future_side'].map({'no': 0, 'buy': 1, 'sell': 2, 'both': 3}).astype(int)
-        dff = dff.drop(['dt', 'open', 'high', 'low', 'close', 'size'], axis=1)
+        #dff = dff.drop(['dt', 'open', 'high', 'low', 'close', 'size'], axis=1)
+        dff = dff.drop(['dt', 'size'], axis=1)
         size = int(round(dff['future_side'].count() * (1 - test_size)))
         train_x = dff.drop('future_side', axis=1).iloc[0:size]
         train_y = dff['future_side'].iloc[0:size]
