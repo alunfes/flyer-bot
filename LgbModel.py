@@ -79,3 +79,6 @@ class LgbModel:
             if predictions[i] == 1 and y[i] == 1 or predictions[i] == 2 and y[i] == 2:
                 matched += 1
         return float(matched) / float(num)
+
+
+

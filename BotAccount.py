@@ -16,6 +16,7 @@ class BotAccount:
         self.collateral_change = 0 #collateral - initial_collateral
         self.collateral_change_per_min = 0
         self.collateral_change_log = []
+        self.order_exec_price_gap = []
 
         self.num_trade = 0
         self.num_win = 0
@@ -56,6 +57,7 @@ class BotAccount:
             price += float(s['price']) * float(s['size'])
         price = round(price / size)
         return side, round(size,8), round(price)
+
 
     def sync_position_order(self):
         position = Trade.get_positions()
@@ -170,6 +172,10 @@ class BotAccount:
             self.update_order(self.order_side,self.order_price,sum(size), self.order_outstanding_size+self.order_executed_size - sum(size),self.order_id,self.order_expire,self.order_status)
             return self.order_side + ' order has been partially executed.' + 'price=' + str(ave_p) + ', size=' + str(sum(size) - self.order_executed_size)
         return ''
+
+    def add_order_exec_price_gap(self, exe_price, ltp, side):
+        gap = ltp - exe_price if side =='buy' else exe_price - ltp
+        self.order_exec_price_gap.append(gap)
 
 
 if __name__ == '__main__':

@@ -496,7 +496,7 @@ class Trade:
             )
         except Exception as e:
             print('opt price order failed! ' + str(e))
-            LogMaster.add_log('opt price order failed! ' + str(e), None)
+            LogMaster.add_log('opt price order failed! ' + str(e), 0, None)
             LineNotification.send_error('opt price order failed! ' + str(e))
             cls.check_exception(e)
             return -1, 0, 0, ''
@@ -666,7 +666,7 @@ class Trade:
             if i > 50:
                 print('market order wait till execution - ')
                 print(status[0])
-                LogMaster.add_log('market order wait till execution - ', None)
+                LogMaster.add_log('market order wait till execution - ', 0, None)
                 LineNotification.send_error('market order wait till execution - ')
                 return status[0]
             time.sleep(0.3)

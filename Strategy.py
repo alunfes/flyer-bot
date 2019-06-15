@@ -21,20 +21,39 @@ class Strategy:
 
 
     @classmethod
-    def model_prediction(cls, pl_kijun, pred, ticks, i, ac: SimAccount):
+    def model_prediction(cls, pl_kijun, stdata, i, ac: SimAccount):
         dd = DecisionData()
-        pred_side = pred[i].map({0: 'no', 1: 'buy', 2: 'sell', 3: 'both'}).astype(str)
-        if ac.holding_side == '' and ac.order_side == '' and pred_side != 'other': #no position no order
-            dd.set_decision(pred_side, cls.__calc_opt_size(ticks.price[i], ac), 'market', False, 10)
-        elif (ac.holding_side == 'buy' or ac.holding_side == 'sell') and (pred_side =='buy' or pred_side == 'sell') and \
-                ac.holding_side != pred_side and ac.order_side != '' and ac.order_side != ac.holding_side and ac.order_type =='limit': #holding side != pred side and pl ordering -> cancel pl order
-            dd.set_decision(pred_side,0, 0,'', True, 10) #cancel order
-        elif (ac.holding_side == 'buy' or ac.holding_side == 'sell') and (pred_side =='buy' or pred_side == 'sell') and \
-                ac.holding_side != pred_side and ac.order_side =='':
-            dd.set_decision(pred_side, ac.holding_size + cls.__calc_opt_size(ticks.price[i], ac), 'market', False, 10)
-        elif ac.holding_side != '' and ac.order_side =='': #place pl order
-            dd.set_decision('buy' if ac.holding_side =='sell' else 'sell', ac.holding_price + pl_kijun if ac.holding_side == 'buy' else ac.holding_price - pl_kijun,
-                            ac.holding_size,'limit',False,360000)
+        pred_side = stdata.prediction[i].map({0: 'no', 1: 'buy', 2: 'sell', 3: 'both'}).astype(str)
+        if ac.holding_side == '' and ac.order_side == '' and (pred_side == 'buy' or pred_side == 'sell'):  # no position no order
+            dd.set_decision(pred_side, 0, cls.__calc_opt_size(stdata.price[i], ac), 'market', False, 10)
+        elif (ac.holding_side == 'buy' or ac.holding_side == 'sell') and (pred_side == 'buy' or pred_side == 'sell') and \
+                ac.holding_side != pred_side and ac.order_side != '' and ac.order_side != ac.holding_side and ac.order_type == 'limit':  # holding side != pred side and pl ordering -> cancel pl order
+            dd.set_decision(pred_side, 0, 0, '', True, 10)  # cancel order
+        elif (ac.holding_side == 'buy' or ac.holding_side == 'sell') and (pred_side == 'buy' or pred_side == 'sell') and ac.holding_side != pred_side and ac.order_side == '':
+            dd.set_decision(pred_side, 0, ac.holding_size + cls.__calc_opt_size(stdata.price[i], ac), 'market', False, 10)  # exit and re-entry
+        elif ac.holding_side != '' and ac.order_side == '':  # place pl order
+            dd.set_decision('buy' if ac.holding_side == 'sell' else 'sell', ac.holding_price + pl_kijun if ac.holding_side == 'buy' else ac.holding_price - pl_kijun, ac.holding_size, 'limit', False, 360000)
+        return dd
+
+    @classmethod
+    def model_prediction_opt(cls, time_exit, zero_three_pl, zero_three_exit_loss, zero_three_exit_profit, stdata, i, ac: SimAccount):
+        dd = DecisionData()
+        pred_side = stdata.prediction[i].map({0: 'no', 1: 'buy', 2: 'sell', 3: 'both'}).astype(str)
+        if ac.holding_side == '' and ac.order_side == '' and (pred_side == 'buy' or pred_side == 'sell'):  # no position no order
+            dd.set_decision(pred_side, 0, cls.__calc_opt_size(stdata.price[i], ac), 'market', False, 10)
+        elif (ac.holding_side == 'buy' or ac.holding_side == 'sell') and (pred_side == 'buy' or pred_side == 'sell') and \
+                ac.holding_side != pred_side and ac.order_side != '' and ac.order_side != ac.holding_side and ac.order_type == 'limit':  # holding side != pred side and pl ordering -> cancel pl order
+            dd.set_decision(pred_side, 0, 0, '', True, 10)  # cancel order
+        elif (ac.holding_side == 'buy' or ac.holding_side == 'sell') and (pred_side == 'buy' or pred_side == 'sell') and ac.holding_side != pred_side and ac.order_side == '':
+            dd.set_decision(pred_side, 0, ac.holding_size + cls.__calc_opt_size(stdata.price[i], ac), 'market', False, 10)  # exit and re-entry
+        elif time_exit >= 60 and ac.holding_side != '' and (stdata.ut[i] - ac.holding_ut) >= time_exit and (pred_side =='no' or pred_side =='both'):
+            dd.set_decision('buy' if ac.holding_side == 'sell' else 'sell', 0, ac.holding_size, 'market', False, 10)
+        elif zero_three_pl and ac.holding_side != '' and ac.after_pl and (pred_side == 'no' or pred_side =='both') :
+            dd.set_decision('buy' if ac.holding_side == 'sell' else 'sell', 0, ac.holding_size, 'market', False, 10)
+        elif zero_three_exit_loss and ac.holding_side != '' and ac.current_pl < 0 and (pred_side =='no' or pred_side =='both'):
+            dd.set_decision('buy' if ac.holding_side == 'sell' else 'sell', 0, ac.holding_size, 'market', False, 10)
+        elif zero_three_exit_profit and ac.holding_side != '' and ac.current_pl > 0 and (pred_side =='no' or pred_side =='both'):
+            dd.set_decision('buy' if ac.holding_side == 'sell' else 'sell', 0, ac.holding_size, 'market', False, 10)
         return dd
 
 

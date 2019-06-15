@@ -50,6 +50,7 @@ class FlyerBot:
     def entry_market_order(self, side, size):
         if self.ac.order_side == '':
             self.ac.update_order(side,0,0,size,'',10,'')
+            ltp = TickData.get_ltp()
             res, size, price, order_id = Trade.market_order_wait_till_execution3(side, size)
             if res == 0:
                 print(side+' entry market order has been executed.'+'price='+str(price)+', size='+str(size))
@@ -57,17 +58,18 @@ class FlyerBot:
                 self.ac.sync_position_order()
                 self.ac.calc_collateral_change()
                 self.ac.calc_pl(TickData.get_ltp())
+                self.ac.add_order_exec_price_gap(price,ltp,side)
                 print('holding_side={},holding_price={},holding_size={},total_pl={},collateral={},collateral_change={},realized_pl={}'.
                       format(self.ac.holding_side,self.ac.holding_price,self.ac.holding_size,self.ac.total_pl,self.ac.collateral,self.ac.collateral_change,self.ac.realized_pl))
                 LogMaster.add_log('Market order entry has been executed. ' + ' side=' + side + ' size=' + str(size)+ ' price=' + str(price), self.prediction[0],self.ac)
 
             else:
-                LogMaster.add_log('Market order has been failed.'+' side='+side +' '+str(size),self.ac)
+                LogMaster.add_log('Market order has been failed.'+' side='+side +' '+str(size),self.prediction[0], self.ac)
                 print('market order failed!')
             self.ac.initialize_order()
         else:
             print('Entry market order - order is already exitst!')
-            LogMaster.add_log('Entry market order - order is already exitst!', self.ac)
+            LogMaster.add_log('Entry market order - order is already exitst!', self.prediction[0], self.ac)
 
 
     def entry_limit_order(self,side, price, size, expire):
@@ -121,7 +123,7 @@ class FlyerBot:
 
 
 
-    def start_flyer_bot(self, num_term, window_term, pl_kijun, future_period):
+    def start_flyer_bot(self, num_term, window_term, pl_kijun, future_period, zero_three_exit_when_loss):
         self.__bot_initializer(num_term, window_term, pl_kijun, future_period)
         self.start_time = time.time()
         while SystemFlg.get_system_flg():
@@ -129,17 +131,23 @@ class FlyerBot:
             self.__update_ohlc()
             if self.ac.holding_side == '' and self.ac.order_side == '': #no position no order
                 if self.prediction[0] == 1 or self.prediction[0] == 2:
-                    pass
                     self.entry_market_order(self.pred_side, 0.01)
             elif self.ac.holding_side != '' and self.ac.order_side == '': #holding position and no order
-                pass
                 self.entry_pl_order()
             elif (self.ac.holding_side == 'buy' and (self.prediction[0] == 2)) or (self.ac.holding_side == 'sell' and (self.prediction[0] == 1)):  # ポジションが判定と逆の時にexit,　もしplがあればキャンセル。。
                 if self.ac.order_status != '':
                     self.cancel_order() #最初にキャンセルしないとexit order出せない。
                 self.entry_market_order(self.pred_side, round(self.ac.holding_size * 2,2))
-            elif self.ac.holding_side != '' and self.ac.order_side != '':#sleep until next ohlc update when prediction is same as
-                time.sleep(1)
+            #elif self.ac.holding_side != '' and self.ac.order_side != '':#sleep until next ohlc update when prediction is same as
+            #    time.sleep(1)
+            if self.ac.holding_side != '' and zero_three_exit_when_loss and (self.prediction[0] == 0 or self.prediction[0] == 3):
+                pl = self.ac.holding_price - TickData.get_ltp() if self.ac.holding_side == 'sell' else TickData.get_ltp() - self.ac.holding_price
+                if pl < -500:
+                    if self.ac.order_side != '':
+                        self.cancel_order()
+                    self.entry_market_order('buy' if self.ac.holding_side == 'buy' else 'sell', self.ac.holding_size)
+                    print('exit zero_three_exit_loss')
+                    LineNotification.send_error('exit zero_three_exit_loss')
             if self.ac.order_side != '' and abs(self.ac.order_price - TickData.get_ltp()) <= 5000:
                 res = self.ac.check_execution()
                 if res !='':
@@ -172,11 +180,13 @@ class FlyerBot:
         LogMaster.add_log('action_message - bot - started bot loop.', self.prediction[0], self.ac)
 
     def __check_system_maintenance(self):
-        if (datetime.now(tz=self.JST).hour == 3 and datetime.now(tz=self.JST).minute >= 48):
+        if (datetime.now(tz=self.JST).hour == 3 and datetime.now(tz=self.JST).minute >= 59):
             print('sleep waiting for system maintenance')
+            LineNotification.send_error('sleep waiting for system maintenance')
             if self.ac.order_side != '':
                 self.cancel_order()
             time.sleep(780)  # wait for daily system maintenace
+            LineNotification.send_error('resumed from maintenance time sleep')
             print('resumed from maintenance time sleep')
 
 
@@ -185,7 +195,6 @@ class FlyerBot:
             flg = True
             num_conti = 0
             num_max_trial = 10
-
             time.sleep(1)
             omd = TickData.get_ohlc()
             if omd is not None:
@@ -231,9 +240,10 @@ class FlyerBot:
                                                                   OneMinMarketData.ohlc.high[-1],
                                                                   OneMinMarketData.ohlc.low[-1],
                                                                   OneMinMarketData.ohlc.close[-1]))
-            print('total_pl={}, pl per min={}, collateral change={},num_trade={},win_rate={},prediction={},holding_side={},holding_price={},holding_size={}'.
-                  format(self.ac.total_pl,self.ac.total_pl_per_min,self.ac.collateral_change,self.ac.num_trade,self.ac.win_rate,self.prediction[0],self.ac.holding_side,self.ac.holding_price,self.ac.holding_size))
+            print('total_pl={}, pl per min={}, collateral change={},num_trade={},win_rate={},prediction={},holding_side={},holding_price={},holding_size={},ltp={}'.
+                  format(self.ac.total_pl,self.ac.total_pl_per_min,self.ac.collateral_change,self.ac.num_trade,self.ac.win_rate,self.prediction[0],self.ac.holding_side,self.ac.holding_price,self.ac.holding_size, TickData.get_ltp()))
             print('private access per 300sec={}'.format(Trade.total_access_per_300s))
+            LogMaster.add_log('private access per 300sec = '+str(Trade.total_access_per_300s), self.prediction[0], self.ac)
             LineNotification.send_notification(LogMaster.get_latest_performance())
 
 
@@ -271,6 +281,6 @@ if __name__ == '__main__':
     LogMaster.initialize()
     LineNotification.initialize()
     fb = FlyerBot()
-    fb.start_flyer_bot(500,10,100000,11) #num_term, window_term, pl_kijun, future_period
+    fb.start_flyer_bot(500,10,100000,10, True) #num_term, window_term, pl_kijun, future_period,
     #'JRF20190526-142616-930215'
     #JRF20190526-143431-187560

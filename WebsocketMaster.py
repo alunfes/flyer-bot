@@ -10,6 +10,7 @@ import pandas as pd
 import pytz
 import numpy as np
 from OneMinData import OneMinData
+from LineNotification import LineNotification
 
 
 class WebsocketMaster:
@@ -108,6 +109,7 @@ class TickData:
         cls.ohlc.initialize()
         cls.last_ohlc_min = int(datetime.now().minute)+1 if datetime.now().minute != 59 else 0
         cls.JST = pytz.timezone('Asia/Tokyo')
+        cls.send_notification_time = 0
         th = threading.Thread(target=cls.start_thread)
         th.start()
 
@@ -173,8 +175,16 @@ class TickData:
     def start_thread(cls):
         while True:
             cls.__check_thread_status()
+            cls.__send_notification()
             #cls.__calc_std(list([d.get('ltp') for d in cls.ticker_data]))
             time.sleep(10)
+
+    @classmethod
+    def __send_notification(cls):
+        if time.time() - cls.send_notification_time >= 3600:
+            cls.send_notification_time = time.time()
+            LineNotification.send_error('ws is active')
+
 
     @classmethod
     def __calc_sma_gradient(cls):

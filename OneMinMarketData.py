@@ -2,6 +2,7 @@ from OneMinData import OneMinData
 import numpy as np
 import pandas as pd
 import talib as ta
+import time
 from datetime import datetime, timedelta, timezone
 
 
@@ -16,12 +17,12 @@ def calc_all_index_wrap(term, open, high, low, close, avep):
     omd.initialize()
     omd.ema[term] = OneMinMarketData.calc_ema(term, close)
     omd.ema_ave[term] = OneMinMarketData.calc_ema(term, avep)
-    omd.ema_kairi[term] = OneMinMarketData.calc_ema_kairi(term, close)
-    omd.ema_gra[term] = OneMinMarketData.calc_ema_gra(term, omd.ema[term])
+    omd.ema_kairi[term] = OneMinMarketData.calc_ema_kairi(close, omd.ema[term])
+    omd.ema_gra[term] = OneMinMarketData.calc_ema_gra(omd.ema[term])
     omd.dema[term] = OneMinMarketData.calc_dema(term, close)
     omd.dema_ave[term] = OneMinMarketData.calc_dema(term, avep)
-    omd.dema_kairi[term] = OneMinMarketData.calc_dema_kairi(term, close)
-    omd.dema_gra[term] = OneMinMarketData.calc_dema_gra(term, omd.dema[term])
+    omd.dema_kairi[term] = OneMinMarketData.calc_dema_kairi(close, omd.dema[term])
+    omd.dema_gra[term] = OneMinMarketData.calc_dema_gra(omd.dema[term])
     omd.midprice[term] = OneMinMarketData.calc_midprice(term, high, low)
     omd.momentum[term] = OneMinMarketData.calc_momentum(term, close)
     omd.momentum_ave[term] = OneMinMarketData.calc_momentum(term, avep)
@@ -63,6 +64,36 @@ def calc_all_index_wrap(term, open, high, low, close, avep):
     return {term: omd}
 
 
+def calc_all_index_wrap2(func, open, high, low, close, avep):
+    omd = OneMinData()
+    omd.initialize()
+    if 'normalized_ave_true_range' in str(func):
+        omd.normalized_ave_true_range = func(high, low, close)
+    elif 'three_outside_updown' in str(func):
+        omd.three_outside_updown = func(open, high, low, close)
+    elif 'breakway' in str(func):
+        omd.breakway = func(open, high, low, close)
+    elif 'dark_cloud_cover' in str(func):
+        omd.dark_cloud_cover = func(open, high, low, close)
+    elif 'dragonfly_doji' in str(func):
+        omd.dragonfly_doji = func(open, high, low, close)
+    elif 'updown_sidebyside_white_lines' in str(func):
+        omd.updown_sidebyside_white_lines = func(open, high, low, close)
+    elif 'haramisen' in str(func):
+        omd.haramisen = func(open, high, low, close)
+    elif 'hikkake_pattern' in str(func):
+        omd.hikkake_pattern = func(open, high, low, close)
+    elif 'neck_pattern' in str(func):
+        omd.neck_pattern = func(open, high, low, close)
+    elif 'upsidedownside_gap_three_method' in str(func):
+        omd.upsidedownside_gap_three_method = func(open, high, low, close)
+    elif 'sar' in str(func):
+        omd.sar = func(high, low, 0.02, 0.2)
+    elif 'bop' in str(func):
+        omd.bop = func(open, high, low, close)
+    return {str(func): omd}
+
+
 class OneMinMarketData:
     @classmethod
     def initialize_for_bot(cls, num_term, window_term, future_side_period, future_side_kijun, initial_data_vol):
@@ -72,12 +103,12 @@ class OneMinMarketData:
         cls.future_side_kijun = future_side_kijun
         cls.ohlc = cls.read_from_csv('./Data/one_min_data.csv')
         cls.ohlc.del_data(initial_data_vol)
-        # cls.__calc_all_index(False)
-        cls.__calc_all_index2_main(False)
+        cls.__calc_all_index(False)
+        #cls.__calc_all_index2_main(False)
 
     @classmethod
     def update_for_bot(cls):
-        cls.__calc_all_index2_main(True)
+        cls.__calc_all_index(True)
 
     @classmethod
     def read_from_csv(cls, file_name):
@@ -103,12 +134,12 @@ class OneMinMarketData:
                 if term > 1:
                     cls.ohlc.ema[term] = cls.calc_ema(term, cls.ohlc.close)
                     cls.ohlc.ema_ave[term] = cls.calc_ema(term, cls.ohlc.ave_price)
-                    cls.ohlc.ema_kairi[term] = cls.calc_ema_kairi(term, cls.ohlc.close)
-                    cls.ohlc.ema_gra[term] = cls.calc_ema_gra(term, cls.ohlc.ema[term])
+                    cls.ohlc.ema_kairi[term] = cls.calc_ema_kairi(cls.ohlc.close, cls.ohlc.ema[term])
+                    cls.ohlc.ema_gra[term] = cls.calc_ema_gra(cls.ohlc.ema[term])
                     cls.ohlc.dema[term] = cls.calc_dema(term, cls.ohlc.close)
                     cls.ohlc.dema_ave[term] = cls.calc_dema(term, cls.ohlc.ave_price)
-                    cls.ohlc.dema_kairi[term] = cls.calc_dema_kairi(term, cls.ohlc.close)
-                    cls.ohlc.dema_gra[term] = cls.calc_dema_gra(term, cls.ohlc.dema[term])
+                    cls.ohlc.dema_kairi[term] = cls.calc_dema_kairi(cls.ohlc.close, cls.ohlc.dema[term])
+                    cls.ohlc.dema_gra[term] = cls.calc_dema_gra(cls.ohlc.dema[term])
                     cls.ohlc.midprice[term] = cls.calc_midprice(term, cls.ohlc.high, cls.ohlc.low)
                     cls.ohlc.momentum[term] = cls.calc_momentum(term, cls.ohlc.close)
                     cls.ohlc.momentum_ave[term] = cls.calc_momentum(term, cls.ohlc.ave_price)
@@ -173,23 +204,19 @@ class OneMinMarketData:
 
     @classmethod
     def __calc_all_index2_main(cls, flg_for_bot):
+        start_time = time.time()
         cls.ohlc.ave_price = cls.calc_ave_price(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
-        '''
-        num = round(cls.num_term / cls.window_term)
-        args = range(num)
-        n_cores = multi.cpu_count()
-        p = Pool(processes=multiprocessing.cpu_count(),initializer=func1, initargs=())
-        res = p.map(cls.calc_all_index2, args)
-        '''
-
         terms = []
         n_cores = multi.cpu_count()
         num = int(round(cls.num_term / cls.window_term))
         for i in range(num):
             terms.append(cls.window_term * (i + 1))
-        omd_list = joblib.Parallel(n_jobs=n_cores)([delayed(calc_all_index_wrap)(term, cls.ohlc.open, cls.ohlc.high,
-                                                                                 cls.ohlc.low, cls.ohlc.close,
-                                                                                 cls.ohlc.ave_price) for term in terms])
+        omd_list = joblib.Parallel(n_jobs=n_cores, verbose=10)([delayed(calc_all_index_wrap)(term, cls.ohlc.open,
+                                                                                             cls.ohlc.high,
+                                                                                             cls.ohlc.low,
+                                                                                             cls.ohlc.close,
+                                                                                             cls.ohlc.ave_price) for
+                                                                term in terms])
         for omd in omd_list:
             key = int(list(omd.keys())[0])
             cls.ohlc.ema[key] = omd[key].ema[key]
@@ -232,6 +259,7 @@ class OneMinMarketData:
                 cls.ohlc.macd_ave[key] = omd[key].macd_ave[key]
                 cls.ohlc.macdsignal_ave[key] = omd[key].macdsignal_ave[key]
                 cls.ohlc.macdhist_ave[key] = omd[key].macdhist_ave[key]
+
         cls.ohlc.normalized_ave_true_range = cls.calc_normalized_ave_true_range(cls.ohlc.high, cls.ohlc.low,
                                                                                 cls.ohlc.close)
         cls.ohlc.three_outside_updown = cls.calc_three_outside_updown(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low,
@@ -252,6 +280,7 @@ class OneMinMarketData:
         cls.ohlc.bop = cls.calc_bop(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
         if flg_for_bot == False:
             cls.ohlc.future_side = cls.calc_future_side(cls.future_side_period, cls.future_side_kijun, cls.ohlc)
+        print('time to calc data={}'.format(time.time() - start_time))
 
     '''
     dema, adx, macdはnum_term * 2くらいnanが発生する
@@ -260,77 +289,67 @@ class OneMinMarketData:
 
     @classmethod
     def generate_df(cls):
+        def __change_dict_key(d, col_name):
+            newd = dict(map(lambda k: (col_name + str(k), d[k][cut_size:end]), d.keys()))
+            return newd
+
+        start_time = time.time()
         cut_size = cls.num_term * 2
         end = len(cls.ohlc.close) - cls.future_side_period
-        df = pd.DataFrame()
-        df = df.assign(dt=cls.ohlc.dt[cut_size:end])
-        df = df.assign(open=np.array(cls.ohlc.open[cut_size:end], dtype=np.float32))
-        df = df.assign(high=np.array(cls.ohlc.high[cut_size:end], dtype=np.float32))
-        df = df.assign(low=np.array(cls.ohlc.low[cut_size:end], dtype=np.float32))
-        df = df.assign(close=np.array(cls.ohlc.close[cut_size:end], dtype=np.float32))
-        df = df.assign(ave_price=np.array(cls.ohlc.ave_price[cut_size:end], dtype=np.float32))
-        df = df.assign(size=np.array(cls.ohlc.size[cut_size:end], dtype=np.float32))
+        data_dict = {'dt': cls.ohlc.dt[cut_size:end], 'open': cls.ohlc.open[cut_size:end],
+                     'high': cls.ohlc.high[cut_size:end], 'low': cls.ohlc.low[cut_size:end],
+                     'close': cls.ohlc.close[cut_size:end], 'size': cls.ohlc.size[cut_size:end],
+                     'normalized_ave_true_range': cls.ohlc.normalized_ave_true_range[cut_size:end],
+                     'three_outside_updown': cls.ohlc.three_outside_updown[cut_size:end],
+                     'breakway': cls.ohlc.breakway[cut_size:end],
+                     'dark_cloud_cover': cls.ohlc.dark_cloud_cover[cut_size:end],
+                     'dragonfly_doji': cls.ohlc.dragonfly_doji[cut_size:end],
+                     'three_oupdown_sidebyside_white_linesutside_updown': cls.ohlc.updown_sidebyside_white_lines[
+                                                                          cut_size:end],
+                     'haramisen': cls.ohlc.haramisen[cut_size:end],
+                     'haramhikkake_patternisen': cls.ohlc.hikkake_pattern[cut_size:end],
+                     'neck_pattern': cls.ohlc.neck_pattern[cut_size:end],
+                     'upsidedownside_gap_three_method': cls.ohlc.upsidedownside_gap_three_method[cut_size:end],
+                     'sar': cls.ohlc.sar[cut_size:end], 'bop': cls.ohlc.bop[cut_size:end]}
 
-        def __make_col_df(df, data, col_name):
-            for k in data:
-                col = col_name + str(k)
-                df = df.assign(col=np.array(data[k][cut_size:end], dtype=np.float32))
-                df.rename(columns={'col': col}, inplace=True)
-            return df
+        data_dict = {**data_dict, **__change_dict_key(cls.ohlc.ema, 'ema'),
+                     **__change_dict_key(cls.ohlc.ema_ave, 'ema_ave'),
+                     **__change_dict_key(cls.ohlc.ema_kairi, 'ema_kairi'),
+                     **__change_dict_key(cls.ohlc.dema_kairi, 'dema_kairi'),
+                     **__change_dict_key(cls.ohlc.ema_gra, 'ema_gra'), **__change_dict_key(cls.ohlc.dema, 'dema'),
+                     **__change_dict_key(cls.ohlc.dema_ave, 'dema_ave'),
+                     **__change_dict_key(cls.ohlc.dema_gra, 'dema_gra'),
+                     **__change_dict_key(cls.ohlc.midprice, 'midprice'),
+                     **__change_dict_key(cls.ohlc.momentum, 'momentum'),
+                     **__change_dict_key(cls.ohlc.momentum_ave, 'momentum_ave'),
+                     **__change_dict_key(cls.ohlc.rate_of_change, 'rate_of_change'),
+                     **__change_dict_key(cls.ohlc.rsi, 'rsi'), **__change_dict_key(cls.ohlc.williams_R, 'williams_R'),
+                     **__change_dict_key(cls.ohlc.beta, 'beta'), **__change_dict_key(cls.ohlc.tsf, 'tsf'),
+                     **__change_dict_key(cls.ohlc.correl, 'correl'),
+                     **__change_dict_key(cls.ohlc.linear_reg, 'linear_reg'),
+                     **__change_dict_key(cls.ohlc.linear_reg_angle, 'linear_reg_angle'),
+                     **__change_dict_key(cls.ohlc.linear_reg_intercept, 'linear_reg_intercept'),
+                     **__change_dict_key(cls.ohlc.linear_reg_slope, 'linear_reg_slope'),
+                     **__change_dict_key(cls.ohlc.stdv, 'stdv'), **__change_dict_key(cls.ohlc.var, 'var'),
+                     **__change_dict_key(cls.ohlc.linear_reg_ave, 'linear_reg_ave'),
+                     **__change_dict_key(cls.ohlc.linear_reg_angle_ave, 'linear_reg_angle_ave'),
+                     **__change_dict_key(cls.ohlc.linear_reg_intercept_ave, 'linear_reg_intercept_ave'),
+                     **__change_dict_key(cls.ohlc.linear_reg_slope_ave, 'linear_reg_slope_ave'),
+                     **__change_dict_key(cls.ohlc.stdv_ave, 'stdv_ave'),
+                     **__change_dict_key(cls.ohlc.var_ave, 'var_ave'), **__change_dict_key(cls.ohlc.adx, 'adx'),
+                     **__change_dict_key(cls.ohlc.aroon_os, 'aroon_os'),
+                     **__change_dict_key(cls.ohlc.cci, 'cci'), **__change_dict_key(cls.ohlc.dx, 'dx'),
+                     **__change_dict_key(cls.ohlc.macd, 'macd'),
+                     **__change_dict_key(cls.ohlc.macdsignal, 'macdsignal'),
+                     **__change_dict_key(cls.ohlc.macdhist, 'macdhist'),
+                     **__change_dict_key(cls.ohlc.macd_ave, 'macd_ave'),
+                     **__change_dict_key(cls.ohlc.macdsignal_ave, 'macdsignal_ave'),
+                     **__change_dict_key(cls.ohlc.macdhist_ave, 'macdhist_ave')}
 
-        df = __make_col_df(df, cls.ohlc.ema, 'ema')
-        df = __make_col_df(df, cls.ohlc.ema_ave, 'ema_ave')
-        df = __make_col_df(df, cls.ohlc.ema_kairi, 'ema_kairi')
-        df = __make_col_df(df, cls.ohlc.dema_kairi, 'dema_kairi')
-        df = __make_col_df(df, cls.ohlc.ema_gra, 'ema_gra')
-        df = __make_col_df(df, cls.ohlc.dema, 'dema')
-        df = __make_col_df(df, cls.ohlc.dema_ave, 'dema_ave')
-        df = __make_col_df(df, cls.ohlc.dema_gra, 'dema_gra')
-        df = __make_col_df(df, cls.ohlc.midprice, 'midprice')
-        df = __make_col_df(df, cls.ohlc.momentum, 'momentum')
-        df = __make_col_df(df, cls.ohlc.momentum_ave, 'momentum_ave')
-        df = __make_col_df(df, cls.ohlc.rate_of_change, 'rate_of_change')
-        df = __make_col_df(df, cls.ohlc.rsi, 'rsi')
-        df = __make_col_df(df, cls.ohlc.williams_R, 'williams_R')
-        df = __make_col_df(df, cls.ohlc.beta, 'beta')
-        df = __make_col_df(df, cls.ohlc.tsf, 'tsf')
-        df = __make_col_df(df, cls.ohlc.correl, 'correl')
-        df = __make_col_df(df, cls.ohlc.linear_reg, 'linear_reg')
-        df = __make_col_df(df, cls.ohlc.linear_reg_angle, 'linear_reg_angle')
-        df = __make_col_df(df, cls.ohlc.linear_reg_intercept, 'linear_reg_intercept')
-        df = __make_col_df(df, cls.ohlc.linear_reg_slope, 'linear_reg_slope')
-        df = __make_col_df(df, cls.ohlc.stdv, 'stdv')
-        df = __make_col_df(df, cls.ohlc.var, 'var')
-        df = __make_col_df(df, cls.ohlc.linear_reg_ave, 'linear_reg_ave')
-        df = __make_col_df(df, cls.ohlc.linear_reg_angle_ave, 'linear_reg_angle_ave')
-        df = __make_col_df(df, cls.ohlc.linear_reg_intercept_ave, 'linear_reg_intercept_ave')
-        df = __make_col_df(df, cls.ohlc.linear_reg_slope_ave, 'linear_reg_slope_ave')
-        df = __make_col_df(df, cls.ohlc.stdv_ave, 'stdv_ave')
-        df = __make_col_df(df, cls.ohlc.var_ave, 'var_ave')
-        df = __make_col_df(df, cls.ohlc.adx, 'adx')
-        df = __make_col_df(df, cls.ohlc.aroon_os, 'aroon_os')
-        df = __make_col_df(df, cls.ohlc.cci, 'cci')
-        df = __make_col_df(df, cls.ohlc.dx, 'dx')
-        df = __make_col_df(df, cls.ohlc.macd, 'macd')
-        df = __make_col_df(df, cls.ohlc.macdsignal, 'macdsignal')
-        df = __make_col_df(df, cls.ohlc.macdhist, 'macdhist')
-        df = __make_col_df(df, cls.ohlc.macd_ave, 'macd_ave')
-        df = __make_col_df(df, cls.ohlc.macdsignal_ave, 'macdsignal_ave')
-        df = __make_col_df(df, cls.ohlc.macdhist_ave, 'macdhist_ave')
-        df = df.assign(
-            normalized_ave_true_range=np.array(cls.ohlc.normalized_ave_true_range[cut_size:end], dtype=np.float32))
-        df = df.assign(three_outside_updown=cls.ohlc.three_outside_updown[cut_size:end])
-        df = df.assign(breakway=cls.ohlc.breakway[cut_size:end])
-        df = df.assign(dark_cloud_cover=cls.ohlc.dark_cloud_cover[cut_size:end])
-        df = df.assign(dragonfly_doji=cls.ohlc.dragonfly_doji[cut_size:end])
-        df = df.assign(updown_sidebyside_white_lines=cls.ohlc.updown_sidebyside_white_lines[cut_size:end])
-        df = df.assign(haramisen=cls.ohlc.haramisen[cut_size:end])
-        df = df.assign(hikkake_pattern=cls.ohlc.hikkake_pattern[cut_size:end])
-        df = df.assign(neck_pattern=cls.ohlc.neck_pattern[cut_size:end])
-        df = df.assign(upsidedownside_gap_three_method=cls.ohlc.upsidedownside_gap_three_method[cut_size:end])
-        df = df.assign(sar=np.array(cls.ohlc.sar[cut_size:end], dtype=np.float32))
-        df = df.assign(bop=np.array(cls.ohlc.bop[cut_size:end], dtype=np.float32))
+        df = pd.DataFrame.from_dict(data_dict)
+
         df = df.assign(future_side=cls.ohlc.future_side[cut_size:])
+        print('time to generate df={}'.format(time.time() - start_time))
         print('future side unique val')
         print(df['future_side'].value_counts(dropna=False, normalize=True))
         return df
@@ -434,46 +453,20 @@ class OneMinMarketData:
         return list(ta.EMA(np.array(close, dtype='f8'), timeperiod=term))
 
     @classmethod
-    def calc_ema_kairi(cls, term, close):
-        kairi = []
-        ema = cls.calc_ema(term, close)
-        for i, em in enumerate(ema):
-            if np.isnan(em):
-                kairi.append(-1)
-            else:
-                kairi.append(100.0 * (close[i] - em) / em)
-        return kairi
+    def calc_ema_kairi(cls, close, ema):
+        return list(map(lambda c, e: (c - e) / e, close, ema))
 
     @classmethod
-    def calc_dema_kairi(cls, term, close):
-        kairi = []
-        dema = cls.calc_dema(term, close)
-        for i, em in enumerate(dema):
-            if np.isnan(em):
-                kairi.append(-1)
-            else:
-                kairi.append(100.0 * (close[i] - em) / em)
-        return kairi
+    def calc_dema_kairi(cls, close, dema):
+        return list(map(lambda c, d: (c - d) / d, close, dema))
 
     @classmethod
-    def calc_ema_gra(cls, term, ema):
-        diff = []
-        for i in range(len(ema)):
-            if ema[i] == np.nan:
-                diff.append(np.nan)
-            else:
-                diff.append(ema[i] - ema[i - 1])
-        return diff
+    def calc_ema_gra(cls, ema):
+        return list(pd.Series(ema).diff())
 
     @classmethod
-    def calc_dema_gra(cls, term, dema):
-        diff = []
-        for i in range(len(dema)):
-            if dema[i] == np.nan:
-                diff.append(np.nan)
-            else:
-                diff.append(dema[i] - dema[i - 1])
-        return diff
+    def calc_dema_gra(cls, dema):
+        return list(pd.Series(dema).diff())
 
     @classmethod
     def calc_dema(cls, term, close):
