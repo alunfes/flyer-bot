@@ -1,7 +1,6 @@
 import lightgbm as lgb
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
-
 from numba import jit
 import numpy as np
 import pandas as pd
@@ -27,9 +26,9 @@ class LgbModel:
     @jit
     def generate_bot_pred_data(self, df: pd.DataFrame):
         if 'future_side' in df.columns:
-            return df.drop(['dt', 'open', 'high', 'low', 'close', 'size', 'future_side'], axis=1)
+            return df.drop(['dt', 'size', 'future_side'], axis=1)
         else:
-            return df.drop(['dt', 'open', 'high', 'low', 'close', 'size'], axis=1)
+            return df.drop(['dt', 'size'], axis=1)
 
     @jit
     def train(self, train_x, train_y):

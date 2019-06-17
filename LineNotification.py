@@ -64,7 +64,7 @@ class LineNotification:
         if len(p) > 0:
             await cls.__send_message('\r\n' + '[' + str(p['dt'].strftime("%m/%d %H:%M:%S")) + ']' +
                                      '\r\n' + 'p:' + str(p['total_pl']) + ', p-min:' + str(round(p['total_pl_per_min'], 2)) +
-                                     ', num:' + str(p['num_trade']) + ', rate:' + str(round(p['win_rate'],2)) +
+                                     ', num:' + str(p['num_trade']) + ', rate:' + str(round(p['win_rate'],2)) + ', exe gap:'+str(round(p['execution gap'],1)) +
                                      '\r\n' + str(p['posi_side'])+' : ' + str(p['prediction']))
 
     @classmethod

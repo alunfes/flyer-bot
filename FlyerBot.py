@@ -126,18 +126,20 @@ class FlyerBot:
     def start_flyer_bot(self, num_term, window_term, pl_kijun, future_period, zero_three_exit_when_loss):
         self.__bot_initializer(num_term, window_term, pl_kijun, future_period)
         self.start_time = time.time()
+        self.fixed_order_size = 0.05
         while SystemFlg.get_system_flg():
             self.__check_system_maintenance()
             self.__update_ohlc()
             if self.ac.holding_side == '' and self.ac.order_side == '': #no position no order
                 if self.prediction[0] == 1 or self.prediction[0] == 2:
-                    self.entry_market_order(self.pred_side, 0.01)
+                    self.entry_market_order(self.pred_side, self.fixed_order_size)
             elif self.ac.holding_side != '' and self.ac.order_side == '': #holding position and no order
                 self.entry_pl_order()
             elif (self.ac.holding_side == 'buy' and (self.prediction[0] == 2)) or (self.ac.holding_side == 'sell' and (self.prediction[0] == 1)):  # ポジションが判定と逆の時にexit,　もしplがあればキャンセル。。
                 if self.ac.order_status != '':
                     self.cancel_order() #最初にキャンセルしないとexit order出せない。
-                self.entry_market_order(self.pred_side, round(self.ac.holding_size * 2,2))
+                self.entry_market_order(self.pred_side, self.ac.holding_size)
+                self.entry_market_order(self.pred_side, self.fixed_order_size)
             #elif self.ac.holding_side != '' and self.ac.order_side != '':#sleep until next ohlc update when prediction is same as
             #    time.sleep(1)
             if self.ac.holding_side != '' and zero_three_exit_when_loss and (self.prediction[0] == 0 or self.prediction[0] == 3):
@@ -145,7 +147,7 @@ class FlyerBot:
                 if pl < -500:
                     if self.ac.order_side != '':
                         self.cancel_order()
-                    self.entry_market_order('buy' if self.ac.holding_side == 'buy' else 'sell', self.ac.holding_size)
+                    self.entry_market_order('sell' if self.ac.holding_side == 'buy' else 'buy', self.ac.holding_size)
                     print('exit zero_three_exit_loss')
                     LineNotification.send_error('exit zero_three_exit_loss')
             if self.ac.order_side != '' and abs(self.ac.order_price - TickData.get_ltp()) <= 5000:
@@ -185,7 +187,7 @@ class FlyerBot:
             LineNotification.send_error('sleep waiting for system maintenance')
             if self.ac.order_side != '':
                 self.cancel_order()
-            time.sleep(780)  # wait for daily system maintenace
+            time.sleep(660)  # wait for daily system maintenace
             LineNotification.send_error('resumed from maintenance time sleep')
             print('resumed from maintenance time sleep')
 
@@ -281,6 +283,6 @@ if __name__ == '__main__':
     LogMaster.initialize()
     LineNotification.initialize()
     fb = FlyerBot()
-    fb.start_flyer_bot(500,10,100000,10, True) #num_term, window_term, pl_kijun, future_period,
+    fb.start_flyer_bot(500,10,100000,3, True) #num_term, window_term, pl_kijun, future_period,
     #'JRF20190526-142616-930215'
     #JRF20190526-143431-187560

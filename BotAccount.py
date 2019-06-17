@@ -16,7 +16,7 @@ class BotAccount:
         self.collateral_change = 0 #collateral - initial_collateral
         self.collateral_change_per_min = 0
         self.collateral_change_log = []
-        self.order_exec_price_gap = []
+        self.order_exec_price_gap = [0]
 
         self.num_trade = 0
         self.num_win = 0
