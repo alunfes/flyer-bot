@@ -364,14 +364,12 @@ class OneMinMarketData:
         df = df.assign(close=cls.ohlc.close[-1:])
         df = df.assign(ave_price=cls.ohlc.ave_price[-1:])
         df = df.assign(size=cls.ohlc.size[-1:])
-
         def __make_col_df(df, data, col_name):
             for k in data:
                 col = col_name + str(k)
                 df = df.assign(col=data[k][-1:])
                 df.rename(columns={'col': col}, inplace=True)
             return df
-
         df = __make_col_df(df, cls.ohlc.ema, 'ema')
         df = __make_col_df(df, cls.ohlc.ema_ave, 'ema_ave')
         df = __make_col_df(df, cls.ohlc.ema_kairi, 'ema_kairi')

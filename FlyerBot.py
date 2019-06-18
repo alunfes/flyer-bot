@@ -283,6 +283,6 @@ if __name__ == '__main__':
     LogMaster.initialize()
     LineNotification.initialize()
     fb = FlyerBot()
-    fb.start_flyer_bot(500,10,100000,3, True) #num_term, window_term, pl_kijun, future_period,
+    fb.start_flyer_bot(500,10,100000,15, False) #num_term, window_term, pl_kijun, future_period,
     #'JRF20190526-142616-930215'
     #JRF20190526-143431-187560
