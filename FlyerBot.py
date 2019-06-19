@@ -123,7 +123,7 @@ class FlyerBot:
 
 
 
-    def start_flyer_bot(self, num_term, window_term, pl_kijun, future_period, zero_three_exit_when_loss):
+    def start_flyer_bot(self, num_term, window_term, pl_kijun, future_period, zero_three_exit_when_loss, zero_three_exit_when_profit):
         self.__bot_initializer(num_term, window_term, pl_kijun, future_period)
         self.start_time = time.time()
         self.fixed_order_size = 0.05
@@ -150,6 +150,14 @@ class FlyerBot:
                     self.entry_market_order('sell' if self.ac.holding_side == 'buy' else 'buy', self.ac.holding_size)
                     print('exit zero_three_exit_loss')
                     LineNotification.send_error('exit zero_three_exit_loss')
+            if self.ac.holding_side != '' and zero_three_exit_when_profit and (self.prediction[0] == 0 or self.prediction[0] == 3):
+                pl = self.ac.holding_price - TickData.get_ltp() if self.ac.holding_side == 'sell' else TickData.get_ltp() - self.ac.holding_price
+                if pl > 100:
+                    if self.ac.order_side != '':
+                        self.cancel_order()
+                    self.entry_market_order('sell' if self.ac.holding_side == 'buy' else 'buy', self.ac.holding_size)
+                    print('exit zero_three_exit_when_profit')
+                    LineNotification.send_error('exit zero_three_exit_when_profit')
             if self.ac.order_side != '' and abs(self.ac.order_price - TickData.get_ltp()) <= 5000:
                 res = self.ac.check_execution()
                 if res !='':
@@ -283,6 +291,6 @@ if __name__ == '__main__':
     LogMaster.initialize()
     LineNotification.initialize()
     fb = FlyerBot()
-    fb.start_flyer_bot(500,10,100000,15, False) #num_term, window_term, pl_kijun, future_period,
+    fb.start_flyer_bot(500,10,100000,5, False, True) #num_term, window_term, pl_kijun, future_period, zero_three_exit_when_loss, zero_three_exit_when_profit
     #'JRF20190526-142616-930215'
     #JRF20190526-143431-187560

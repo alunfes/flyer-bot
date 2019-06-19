@@ -62,7 +62,7 @@ class BotAccount:
     def sync_position_order(self):
         position = Trade.get_positions()
         orders = Trade.get_orders()
-        if len(position) > 0:
+        if len(position) > 0 and 'error' not in str(position):
             holding_side, holding_size, holding_price = self.combine_status_data(position)
             if self.holding_side != holding_side or abs(self.holding_price - holding_price) >= 1 or abs(self.holding_size - holding_size) >= 0.01:
                 self.holding_side, self.holding_size, self.holding_price = holding_side, holding_size, holding_price

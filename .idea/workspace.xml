@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d2cce0c7-3134-48db-926f-66dbf2e9e417" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/BotAccount.py" beforeDir="false" afterPath="$PROJECT_DIR$/BotAccount.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FlyerBot.py" beforeDir="false" afterPath="$PROJECT_DIR$/FlyerBot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/OneMinMarketData.py" beforeDir="false" afterPath="$PROJECT_DIR$/OneMinMarketData.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -16,8 +16,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/BotAccount.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="92">
-              <caret line="9" column="27" lean-forward="true" selection-start-line="9" selection-start-column="27" selection-end-line="9" selection-end-column="27" />
+            <state relative-caret-position="-2215">
+              <caret line="14" column="33" selection-start-line="14" selection-start-column="33" selection-end-line="14" selection-end-column="33" />
             </state>
           </provider>
         </entry>
@@ -25,8 +25,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Trade.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1107">
-              <caret line="58" column="42" selection-start-line="58" selection-start-column="42" selection-end-line="58" selection-end-column="42" />
+            <state relative-caret-position="272">
+              <caret line="366" column="42" selection-start-line="366" selection-start-column="42" selection-end-line="366" selection-end-column="42" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -49,8 +49,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/FlyerBot.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="243">
-              <caret line="215" column="58" lean-forward="true" selection-start-line="215" selection-start-column="58" selection-end-line="215" selection-end-column="58" />
+            <state relative-caret-position="160">
+              <caret line="154" column="25" selection-start-line="154" selection-start-column="25" selection-end-line="154" selection-end-column="25" />
               <folding>
                 <element signature="e#0#29#0" expanded="true" />
               </folding>
@@ -123,7 +123,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>market_order_wait_till_execution</find>
       <find>ind_updates</find>
       <find>self.JST</find>
       <find>1559306520</find>
@@ -148,11 +147,12 @@
       <find>JST</find>
       <find>lo</find>
       <find>Log</find>
-      <find>sleep</find>
       <find>0.01</find>
       <find>line_api</find>
-      <find>order_exec_price_gap</find>
       <find>update_for_bot</find>
+      <find>order_exec_price_gap</find>
+      <find>sleep</find>
+      <find>get_positions</find>
     </findStrings>
     <replaceStrings>
       <replace>None</replace>
@@ -189,11 +189,11 @@
         <option value="$PROJECT_DIR$/Trade.py" />
         <option value="$PROJECT_DIR$/MasterThread.py" />
         <option value="$PROJECT_DIR$/LgbModel.py" />
-        <option value="$PROJECT_DIR$/BotAccount.py" />
         <option value="$PROJECT_DIR$/LogMaster.py" />
         <option value="$PROJECT_DIR$/LineNotification.py" />
-        <option value="$PROJECT_DIR$/FlyerBot.py" />
         <option value="$PROJECT_DIR$/OneMinMarketData.py" />
+        <option value="$PROJECT_DIR$/BotAccount.py" />
+        <option value="$PROJECT_DIR$/FlyerBot.py" />
       </list>
     </option>
   </component>
@@ -244,7 +244,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.CryptowatchDataGetter">
+  <component name="RunManager" selected="Python.FlyerBot">
     <configuration name="BotAccount" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="flyer-bot" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -352,8 +352,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.CryptowatchDataGetter" />
         <item itemvalue="Python.FlyerBot" />
+        <item itemvalue="Python.CryptowatchDataGetter" />
         <item itemvalue="Python.WebsocketMaster" />
         <item itemvalue="Python.Trade" />
         <item itemvalue="Python.BotAccount" />
@@ -382,7 +382,7 @@
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.4802183" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.4802183" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.27694407" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -545,16 +545,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Trade.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1107">
-          <caret line="58" column="42" selection-start-line="58" selection-start-column="42" selection-end-line="58" selection-end-column="42" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Data/one_min_data.csv">
       <provider selected="true" editor-type-id="csv-text-editor">
         <state relative-caret-position="-1547816">
@@ -613,13 +603,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/BotAccount.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="92">
-          <caret line="9" column="27" lean-forward="true" selection-start-line="9" selection-start-column="27" selection-end-line="9" selection-end-column="27" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/LgbModel.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="146">
@@ -640,10 +623,27 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Trade.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="272">
+          <caret line="366" column="42" selection-start-line="366" selection-start-column="42" selection-end-line="366" selection-end-column="42" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BotAccount.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-2215">
+          <caret line="14" column="33" selection-start-line="14" selection-start-column="33" selection-end-line="14" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/FlyerBot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="243">
-          <caret line="215" column="58" lean-forward="true" selection-start-line="215" selection-start-column="58" selection-end-line="215" selection-end-column="58" />
+        <state relative-caret-position="160">
+          <caret line="154" column="25" selection-start-line="154" selection-start-column="25" selection-end-line="154" selection-end-column="25" />
           <folding>
             <element signature="e#0#29#0" expanded="true" />
           </folding>
