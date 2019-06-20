@@ -44,7 +44,7 @@ class LgbModel:
         return model
 
     def load_model(self, path):
-        with open('/Users/alun/Projects/flyer-bot/Model/lgb_model.dat', 'rb') as f:
+        with open('./Model/lgb_model.dat', 'rb') as f:
             return pickle.load(f)
 
     def prediction(self, model, test_x, pred_kijun):

@@ -126,7 +126,7 @@ class FlyerBot:
     def start_flyer_bot(self, num_term, window_term, pl_kijun, future_period, zero_three_exit_when_loss, zero_three_exit_when_profit):
         self.__bot_initializer(num_term, window_term, pl_kijun, future_period)
         self.start_time = time.time()
-        self.fixed_order_size = 0.05
+        self.fixed_order_size = 0.1
         while SystemFlg.get_system_flg():
             self.__check_system_maintenance()
             self.__update_ohlc()
@@ -291,6 +291,6 @@ if __name__ == '__main__':
     LogMaster.initialize()
     LineNotification.initialize()
     fb = FlyerBot()
-    fb.start_flyer_bot(500,10,100000,5, False, True) #num_term, window_term, pl_kijun, future_period, zero_three_exit_when_loss, zero_three_exit_when_profit
+    fb.start_flyer_bot(150, 2, 2500, 5, False, True) #num_term, window_term, pl_kijun, future_period, zero_three_exit_when_loss, zero_three_exit_when_profit
     #'JRF20190526-142616-930215'
     #JRF20190526-143431-187560

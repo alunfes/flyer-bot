@@ -16,7 +16,7 @@ class LineNotification:
 
     @classmethod
     def __read_keys(cls):
-        file = open('/Users/alun/Projects/flyer-bot/ignore/line.txt', 'r')  # 読み込みモードでオープン
+        file = open('./ignore/line.txt', 'r')  # 読み込みモードでオープン
         cls.token = file.readline().split(':')[1]
         file.close()
 

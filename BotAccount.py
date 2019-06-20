@@ -46,6 +46,7 @@ class BotAccount:
         self.holding_size = 0
         self.holding_id = 0
         self.holding_dt = ''
+        self.holding_ut = 0
 
     def combine_status_data(self, status):
         side = ''

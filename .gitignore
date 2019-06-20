@@ -1,7 +1,7 @@
 /ignore/
 /Model/
 /Data/
-/.ipynb*/
+#/.ipynb/
 /.vscode/
 /flyer-bot/
 *.csv

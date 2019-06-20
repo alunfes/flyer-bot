@@ -356,71 +356,64 @@ class OneMinMarketData:
 
     @classmethod
     def generate_df_for_bot(cls):
-        df = pd.DataFrame()
-        df = df.assign(dt=cls.ohlc.dt[-1:])
-        df = df.assign(open=cls.ohlc.open[-1:])
-        df = df.assign(high=cls.ohlc.high[-1:])
-        df = df.assign(low=cls.ohlc.low[-1:])
-        df = df.assign(close=cls.ohlc.close[-1:])
-        df = df.assign(ave_price=cls.ohlc.ave_price[-1:])
-        df = df.assign(size=cls.ohlc.size[-1:])
-        def __make_col_df(df, data, col_name):
-            for k in data:
-                col = col_name + str(k)
-                df = df.assign(col=data[k][-1:])
-                df.rename(columns={'col': col}, inplace=True)
-            return df
-        df = __make_col_df(df, cls.ohlc.ema, 'ema')
-        df = __make_col_df(df, cls.ohlc.ema_ave, 'ema_ave')
-        df = __make_col_df(df, cls.ohlc.ema_kairi, 'ema_kairi')
-        df = __make_col_df(df, cls.ohlc.dema_kairi, 'dema_kairi')
-        df = __make_col_df(df, cls.ohlc.ema_gra, 'ema_gra')
-        df = __make_col_df(df, cls.ohlc.dema, 'dema')
-        df = __make_col_df(df, cls.ohlc.dema_ave, 'dema_ave')
-        df = __make_col_df(df, cls.ohlc.dema_gra, 'dema_gra')
-        df = __make_col_df(df, cls.ohlc.midprice, 'midprice')
-        df = __make_col_df(df, cls.ohlc.momentum, 'momentum')
-        df = __make_col_df(df, cls.ohlc.momentum_ave, 'momentum_ave')
-        df = __make_col_df(df, cls.ohlc.rate_of_change, 'rate_of_change')
-        df = __make_col_df(df, cls.ohlc.rsi, 'rsi')
-        df = __make_col_df(df, cls.ohlc.williams_R, 'williams_R')
-        df = __make_col_df(df, cls.ohlc.beta, 'beta')
-        df = __make_col_df(df, cls.ohlc.tsf, 'tsf')
-        df = __make_col_df(df, cls.ohlc.correl, 'correl')
-        df = __make_col_df(df, cls.ohlc.linear_reg, 'linear_reg')
-        df = __make_col_df(df, cls.ohlc.linear_reg_angle, 'linear_reg_angle')
-        df = __make_col_df(df, cls.ohlc.linear_reg_intercept, 'linear_reg_intercept')
-        df = __make_col_df(df, cls.ohlc.linear_reg_slope, 'linear_reg_slope')
-        df = __make_col_df(df, cls.ohlc.stdv, 'stdv')
-        df = __make_col_df(df, cls.ohlc.var, 'var')
-        df = __make_col_df(df, cls.ohlc.linear_reg_ave, 'linear_reg_ave')
-        df = __make_col_df(df, cls.ohlc.linear_reg_angle_ave, 'linear_reg_angle_ave')
-        df = __make_col_df(df, cls.ohlc.linear_reg_intercept_ave, 'linear_reg_intercept_ave')
-        df = __make_col_df(df, cls.ohlc.linear_reg_slope_ave, 'linear_reg_slope_ave')
-        df = __make_col_df(df, cls.ohlc.stdv_ave, 'stdv_ave')
-        df = __make_col_df(df, cls.ohlc.var_ave, 'var_ave')
-        df = __make_col_df(df, cls.ohlc.adx, 'adx')
-        df = __make_col_df(df, cls.ohlc.aroon_os, 'aroon_os')
-        df = __make_col_df(df, cls.ohlc.cci, 'cci')
-        df = __make_col_df(df, cls.ohlc.dx, 'dx')
-        df = __make_col_df(df, cls.ohlc.macd, 'macd')
-        df = __make_col_df(df, cls.ohlc.macdsignal, 'macdsignal')
-        df = __make_col_df(df, cls.ohlc.macdhist, 'macdhist')
-        df = __make_col_df(df, cls.ohlc.macd_ave, 'macd_ave')
-        df = __make_col_df(df, cls.ohlc.macdsignal_ave, 'macdsignal_ave')
-        df = __make_col_df(df, cls.ohlc.macdhist_ave, 'macdhist_ave')
-        df = df.assign(normalized_ave_true_range=cls.ohlc.normalized_ave_true_range[-1:])
-        df = df.assign(three_outside_updown=cls.ohlc.three_outside_updown[-1:])
-        df = df.assign(breakway=cls.ohlc.breakway[-1:])
-        df = df.assign(dark_cloud_cover=cls.ohlc.dark_cloud_cover[-1:])
-        df = df.assign(dragonfly_doji=cls.ohlc.dragonfly_doji[-1:])
-        df = df.assign(updown_sidebyside_white_lines=cls.ohlc.updown_sidebyside_white_lines[-1:])
-        df = df.assign(haramisen=cls.ohlc.haramisen[-1:])
-        df = df.assign(hikkake_pattern=cls.ohlc.hikkake_pattern[-1:])
-        df = df.assign(neck_pattern=cls.ohlc.neck_pattern[-1:])
-        df = df.assign(sar=cls.ohlc.sar[-1:])
-        df = df.assign(bop=cls.ohlc.bop[-1:])
-        df = df.assign(upsidedownside_gap_three_method=cls.ohlc.upsidedownside_gap_three_method[-1:])
+        def __change_dict_key(d, col_name):
+            newd = dict(map(lambda k: (col_name + str(k), d[k][-1:]), d.keys()))
+            return newd
+
+        data_dict = {'dt': cls.ohlc.dt[-1:], 'open': cls.ohlc.open[-1:], 'high': cls.ohlc.high[-1:],
+                     'low': cls.ohlc.low[-1:],
+                     'close': cls.ohlc.close[-1:], 'size': cls.ohlc.size[-1:],
+                     'normalized_ave_true_range': cls.ohlc.normalized_ave_true_range[-1:],
+                     'three_outside_updown': cls.ohlc.three_outside_updown[-1:], 'breakway': cls.ohlc.breakway[-1:],
+                     'dark_cloud_cover': cls.ohlc.dark_cloud_cover[-1:],
+                     'dragonfly_doji': cls.ohlc.dragonfly_doji[-1:],
+                     'three_oupdown_sidebyside_white_linesutside_updown': cls.ohlc.updown_sidebyside_white_lines[-1:],
+                     'haramisen': cls.ohlc.haramisen[-1:], 'haramhikkake_patternisen': cls.ohlc.hikkake_pattern[-1:],
+                     'neck_pattern': cls.ohlc.neck_pattern[-1:],
+                     'upsidedownside_gap_three_method': cls.ohlc.upsidedownside_gap_three_method[-1:],
+                     'sar': cls.ohlc.sar[-1:], 'bop': cls.ohlc.bop[-1:]}
+
+        data_dict = {**data_dict,
+                     **__change_dict_key(cls.ohlc.ema, 'ema'),
+                     **__change_dict_key(cls.ohlc.ema_ave, 'ema_ave'),
+                     **__change_dict_key(cls.ohlc.ema_kairi, 'ema_kairi'),
+                     **__change_dict_key(cls.ohlc.dema_kairi, 'dema_kairi'),
+                     **__change_dict_key(cls.ohlc.ema_gra, 'ema_gra'),
+                     **__change_dict_key(cls.ohlc.dema, 'dema'),
+                     **__change_dict_key(cls.ohlc.dema_ave, 'dema_ave'),
+                     **__change_dict_key(cls.ohlc.dema_gra, 'dema_gra'),
+                     **__change_dict_key(cls.ohlc.midprice, 'midprice'),
+                     **__change_dict_key(cls.ohlc.momentum, 'momentum'),
+                     **__change_dict_key(cls.ohlc.momentum_ave, 'momentum_ave'),
+                     **__change_dict_key(cls.ohlc.rate_of_change, 'rate_of_change'),
+                     **__change_dict_key(cls.ohlc.rsi, 'rsi'),
+                     **__change_dict_key(cls.ohlc.williams_R, 'williams_R'),
+                     **__change_dict_key(cls.ohlc.beta, 'beta'),
+                     **__change_dict_key(cls.ohlc.tsf, 'tsf'),
+                     **__change_dict_key(cls.ohlc.correl, 'correl'),
+                     **__change_dict_key(cls.ohlc.linear_reg, 'linear_reg'),
+                     **__change_dict_key(cls.ohlc.linear_reg_angle, 'linear_reg_angle'),
+                     **__change_dict_key(cls.ohlc.linear_reg_intercept, 'linear_reg_intercept'),
+                     **__change_dict_key(cls.ohlc.linear_reg_slope, 'linear_reg_slope'),
+                     **__change_dict_key(cls.ohlc.stdv, 'stdv'),
+                     **__change_dict_key(cls.ohlc.var, 'var'),
+                     **__change_dict_key(cls.ohlc.linear_reg_ave, 'linear_reg_ave'),
+                     **__change_dict_key(cls.ohlc.linear_reg_angle_ave, 'linear_reg_angle_ave'),
+                     **__change_dict_key(cls.ohlc.linear_reg_intercept_ave, 'linear_reg_intercept_ave'),
+                     **__change_dict_key(cls.ohlc.linear_reg_slope_ave, 'linear_reg_slope_ave'),
+                     **__change_dict_key(cls.ohlc.stdv_ave, 'stdv_ave'),
+                     **__change_dict_key(cls.ohlc.var_ave, 'var_ave'),
+                     **__change_dict_key(cls.ohlc.adx, 'adx'),
+                     **__change_dict_key(cls.ohlc.aroon_os, 'aroon_os'),
+                     **__change_dict_key(cls.ohlc.cci, 'cci'),
+                     **__change_dict_key(cls.ohlc.dx, 'dx'),
+                     **__change_dict_key(cls.ohlc.macd, 'macd'),
+                     **__change_dict_key(cls.ohlc.macdsignal, 'macdsignal'),
+                     **__change_dict_key(cls.ohlc.macdhist, 'macdhist'),
+                     **__change_dict_key(cls.ohlc.macd_ave, 'macd_ave'),
+                     **__change_dict_key(cls.ohlc.macdsignal_ave, 'macdsignal_ave'),
+                     **__change_dict_key(cls.ohlc.macdhist_ave, 'macdhist_ave')}
+        df = pd.DataFrame.from_dict(data_dict)
         return df
 
     @classmethod

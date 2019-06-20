@@ -39,7 +39,7 @@ class Trade:
 
     @classmethod
     def __read_keys(cls):
-        file = open('/Users/alun/Projects/flyer-bot/ignore/ex.txt', 'r')  # 読み込みモードでオープン
+        file = open('./ignore/ex.txt', 'r')  # 読み込みモードでオープン
         cls.secret_key = file.readline().split(':')[1]
         cls.secret_key = cls.secret_key[:len(cls.secret_key) - 1]
         cls.api_key = file.readline().split(':')[1]
@@ -482,7 +482,9 @@ class Trade:
         exec_size = []
         exec_price = []
         max_wait = 2.1
-        loop_sec = 0.3
+        loop_sec = 0.01
+        bid = TickData.get_bid_price()
+        ask = TickData.get_ask_price()
         try:
             price = TickData.get_bid_price() if side =='buy' else TickData.get_ask_price()
             cls.num_private_access += 1
