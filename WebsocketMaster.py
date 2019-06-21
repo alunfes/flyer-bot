@@ -114,6 +114,12 @@ class TickData:
         th.start()
 
     @classmethod
+    def stop(cls):
+        cls.ws_ticker.disconnect()
+        cls.ws_execution.disconnect()
+        LineNotification.send_error('stopped ws threads')
+
+    @classmethod
     def get_ltp(cls):
         with cls.exec_lock:
             if len(cls.exec_data) > 0:

@@ -128,7 +128,7 @@ class FlyerBot:
         self.start_time = time.time()
         self.fixed_order_size = 0.1
         while SystemFlg.get_system_flg():
-            self.__check_system_maintenance()
+            self.__check_system_maintenance(num_term, window_term, future_period, pl_kijun)
             self.__update_ohlc()
             if self.ac.holding_side == '' and self.ac.order_side == '': #no position no order
                 if self.prediction[0] == 1 or self.prediction[0] == 2:
@@ -189,13 +189,17 @@ class FlyerBot:
         print('bot - started bot loop.')
         LogMaster.add_log('action_message - bot - started bot loop.', self.prediction[0], self.ac)
 
-    def __check_system_maintenance(self):
+    def __check_system_maintenance(self, num_term, window_term, future_period, pl_kijun):
         if (datetime.now(tz=self.JST).hour == 3 and datetime.now(tz=self.JST).minute >= 59):
             print('sleep waiting for system maintenance')
+            TickData.stop()
             LineNotification.send_error('sleep waiting for system maintenance')
             if self.ac.order_side != '':
                 self.cancel_order()
-            time.sleep(660)  # wait for daily system maintenace
+            time.sleep(720)  # wait for daily system maintenace
+            TickData.initialize()
+            CryptowatchDataGetter.get_and_add_to_csv()
+            OneMinMarketData.initialize_for_bot(num_term, window_term, future_period, pl_kijun, num_term + 1)
             LineNotification.send_error('resumed from maintenance time sleep')
             print('resumed from maintenance time sleep')
 
@@ -294,3 +298,6 @@ if __name__ == '__main__':
     fb.start_flyer_bot(150, 2, 2500, 5, False, True) #num_term, window_term, pl_kijun, future_period, zero_three_exit_when_loss, zero_three_exit_when_profit
     #'JRF20190526-142616-930215'
     #JRF20190526-143431-187560
+
+
+

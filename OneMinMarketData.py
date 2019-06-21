@@ -623,44 +623,47 @@ class OneMinMarketData:
         return -1
 
     @classmethod
-    def generate_tick_pred_data(cls, prediction, start_ind):  # assume index 0 of ohlc and prediction is matched
+    def generate_tick_pred_data(cls, prediction, start_ind): #assume index 0 of ohlc and prediction is matched
         tick = []
         dt = []
         ut = []
         stdata = SimTickData()
-        start_dt = cls.ohlc.dt[0]
-        start_ut = cls.ohlc.unix_time[0]
+        start_dt = cls.ohlc.dt[start_ind]
+        start_ut = cls.ohlc.unix_time[start_ind]
         pred = []
         split_num = 60
-        cls.ohlc.del_data(len(cls.ohlc.close) - start_ind)
+        ohlc_open = cls.ohlc.open[:]
+        ohlc_high = cls.ohlc.high[:]
+        ohlc_low = cls.ohlc.low[:]
+        ohlc_close = cls.ohlc.close[:]
+        num_remain = len(cls.ohlc.close) - start_ind
+        del ohlc_open[:-num_remain]
+        del ohlc_high[:-num_remain]
+        del ohlc_low[:-num_remain]
+        del ohlc_close[:-num_remain]
+
         for i in range(len(prediction)):
             om_tick = []
-            if cls.ohlc.open[i] < cls.ohlc.close[i]:  # open, low, high, close
-                ol = cls.ohlc.open[i] - cls.ohlc.low[i]
-                lh = cls.ohlc.high[i] - cls.ohlc.low[i]
-                hc = cls.ohlc.high[i] - cls.ohlc.close[i]
+            if ohlc_open[i] < ohlc_close[i]:  # open, low, high, close
+                ol = ohlc_open[i] - ohlc_low[i]
+                lh = ohlc_high[i] - ohlc_low[i]
+                hc = ohlc_high[i] - ohlc_close[i]
                 sec_width = (ol + lh + hc) / split_num
                 if sec_width > 0:
-                    om_tick.extend(
-                        list(np.round(np.linspace(cls.ohlc.open[i], cls.ohlc.low[i], round(ol / sec_width)))))
-                    om_tick.extend(
-                        list(np.round(np.linspace(cls.ohlc.low[i], cls.ohlc.high[i], round(lh / sec_width)))))
-                    om_tick.extend(
-                        list(np.round(np.linspace(cls.ohlc.high[i], cls.ohlc.close[i], round(hc / sec_width)))))
+                    om_tick.extend(list(np.round(np.linspace(ohlc_open[i], ohlc_low[i], round(ol / sec_width)))))
+                    om_tick.extend(list(np.round(np.linspace(ohlc_low[i], ohlc_high[i], round(lh / sec_width)))))
+                    om_tick.extend(list(np.round(np.linspace(ohlc_high[i], ohlc_close[i], round(hc / sec_width)))))
                 else:
                     om_tick.extend([tick[-1]] * split_num)
             else:  # open, high, low, close
-                oh = cls.ohlc.high[i] - cls.ohlc.open[i]
-                hl = cls.ohlc.high[i] - cls.ohlc.low[i]
-                lc = cls.ohlc.close[i] - cls.ohlc.low[i]
+                oh = ohlc_high[i] - ohlc_open[i]
+                hl = ohlc_high[i] - ohlc_low[i]
+                lc = ohlc_close[i] - ohlc_low[i]
                 sec_width = (oh + hl + lc) / split_num
                 if sec_width > 0:
-                    om_tick.extend(
-                        list(np.round(np.linspace(cls.ohlc.open[i], cls.ohlc.high[i], round(oh / sec_width)))))
-                    om_tick.extend(
-                        list(np.round(np.linspace(cls.ohlc.high[i], cls.ohlc.low[i], round(hl / sec_width)))))
-                    om_tick.extend(
-                        list(np.round(np.linspace(cls.ohlc.low[i], cls.ohlc.close[i], round(lc / sec_width)))))
+                    om_tick.extend(list(np.round(np.linspace(ohlc_open[i], ohlc_high[i], round(oh / sec_width)))))
+                    om_tick.extend(list(np.round(np.linspace(ohlc_high[i], ohlc_low[i], round(hl / sec_width)))))
+                    om_tick.extend(list(np.round(np.linspace(ohlc_low[i], ohlc_close[i], round(lc / sec_width)))))
                 else:
                     om_tick.extend([tick[-1]] * split_num)
             if split_num - len(om_tick) > 0:
@@ -668,14 +671,14 @@ class OneMinMarketData:
             elif split_num - len(om_tick) < 0:
                 del om_tick[-(len(om_tick) - split_num):]
             tick.extend(om_tick)
-            ut.extend([start_ut + (j + 1) for j in range(split_num)])
-            dt.extend([start_dt + timedelta(seconds=k + 1) for k in range(split_num)])
+            ut.extend([start_ut + (j+1) for j in range(split_num)])
+            dt.extend([start_dt+timedelta(seconds=k+1) for k in range(split_num)])
             start_ut = ut[-1]
             start_dt = dt[-1]
-            if i == 0:
+            if i ==0:
                 pred.extend([0] * split_num)
             else:
-                pred.extend([prediction[i - 1]] * split_num)
+                pred.extend([prediction[i-1]] * split_num)
         stdata.dt.extend(dt)
         stdata.ut.extend(ut)
         stdata.price.extend(tick)
