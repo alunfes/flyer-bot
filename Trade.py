@@ -502,7 +502,6 @@ class Trade:
             LineNotification.send_error('opt price order failed! ' + str(e))
             cls.check_exception(e)
             return -1, 0, 0, ''
-
         order_id = order_id['info']['child_order_acceptance_id']
         print('waiting for opt price order execution...')
         num = 0
@@ -731,7 +730,7 @@ class Trade:
 
 if __name__ == '__main__':
     SystemFlg.initialize()
-    TickData.initialize(90)
+    TickData.initialize(30,30)
     time.sleep(5)
     LogMaster.initialize()
     Trade.initialize()

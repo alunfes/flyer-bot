@@ -192,7 +192,7 @@ class FlyerBot:
     def __check_system_maintenance(self, num_term, window_term, future_period, pl_kijun):
         if (datetime.now(tz=self.JST).hour == 3 and datetime.now(tz=self.JST).minute >= 59):
             print('sleep waiting for system maintenance')
-            TickData.stop()
+            TickData.stop(30,30)
             LineNotification.send_error('sleep waiting for system maintenance')
             if self.ac.order_side != '':
                 self.cancel_order()
