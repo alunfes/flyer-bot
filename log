@@ -1,0 +1,49 @@
+'''
+normal BP LGB learning
+'''
+
+import time
+futurel_kijun = 3000
+sim_pl = 100000
+future_period = 30
+num_term = 100
+window_term = 10
+pl = 10000
+ls = 1000
+side = ''
+
+#params = {'objective': 'multiclass','num_class': 4,  'early_stopping_rounds':10, 'tree_learner': 'data'}
+
+'''
+params = {'objective': 'multiclass','num_class': 4,'boosting': 'dart',  'early_stopping_rounds':5,
+          'learning_rate': 0.01, 'num_iterations': 100, 'max_depth':7, 'num_leaves': 80}
+
+params = {'objective': 'binary','boosting': 'gbdt',  #'early_stopping_rounds':50,
+          'learning_rate': 0.01, 'num_iterations': 3000, 'max_depth':8, 'num_leaves': 200}
+          '''
+params = {'objective': 'binary','boosting': 'dart',  #'early_stopping_rounds':50,'
+         }
+
+start = time.time()
+OneMinMarketData.initialize_for_bot(num_term, window_term, future_period, futurel_kijun, 5000)
+buy_points, sell_points = OneMinMarketData.calc_pl_ls_points(side, pl, ls, OneMinMarketData.ohlc)
+df = OneMinMarketData.generate_buy_bp_df(buy_points, 0.6)
+
+lgbmodel = LgbModel()
+dfx = df.drop(['dt','size','bp'],axis = 1)
+dfy = df['bp']
+dfy.columns = ['bp']
+train_x, test_x, train_y, test_y = train_test_split(dfx, dfy, train_size=0.6)
+#train_x, test_x, d,d = train_test_split(train_x, train_y, train_size=1, random_state=42)
+#train_xx, valid_x, train_yy, valid_y = train_test_split(train_x, train_y, train_size=0.9, random_state=1)
+print('time to calc data={}'.format(time.time() - start))
+#model = lgbmodel.train_params_with_validations(train_xx, train_yy,valid_x, valid_y, params)
+model = lgbmodel.train_params(train_x, train_y, params)
+#model = lgbmodel.train(train_x, train_y)
+with open('/content/drive/My Drive/Model/lgb_model.dat', 'wb') as f:
+    pickle.dump(model, f)
+tp = lgbmodel.bp_prediciton(model, train_x)
+print('train accuracy={}'.format(lgbmodel.calc_bp_accuracy(tp,train_y)))
+if len(test_y) > 0:
+    predictions = lgbmodel.bp_prediciton(model, test_x)
+    print('test accuracy={}'.format(lgbmodel.calc_bp_accuracy(predictions,test_y)))

@@ -6,12 +6,6 @@ import time
 from datetime import datetime, timedelta, timezone
 
 
-
-'''
-using ta-lib for index calc.
-'''
-
-
 def calc_all_index_wrap(term, open, high, low, close, avep):
     omd = OneMinData()
     omd.initialize()
@@ -101,14 +95,14 @@ class OneMinMarketData:
         cls.window_term = window_term
         cls.future_side_period = future_side_period
         cls.future_side_kijun = future_side_kijun
-        cls.ohlc = cls.read_from_csv('./Data/one_min_data.csv')
+        cls.ohlc = cls.read_from_csv('/content/drive/My Drive/one_min_data (1).csv')
         cls.ohlc.del_data(initial_data_vol)
         cls.__calc_all_index(False)
-        #cls.__calc_all_index2_main(False)
+        # cls.__calc_all_index2_main(False)
 
     @classmethod
     def update_for_bot(cls):
-        cls.__calc_all_index(True)
+        cls.__calc_all_index2_main(True)
 
     @classmethod
     def read_from_csv(cls, file_name):
@@ -126,6 +120,7 @@ class OneMinMarketData:
 
     @classmethod
     def __calc_all_index(cls, flg_for_bot):
+        start_time = time.time()
         cls.ohlc.ave_price = cls.calc_ave_price(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
         num = round(cls.num_term / cls.window_term)
         if num > 1:
@@ -197,6 +192,7 @@ class OneMinMarketData:
         cls.ohlc.bop = cls.calc_bop(cls.ohlc.open, cls.ohlc.high, cls.ohlc.low, cls.ohlc.close)
         if flg_for_bot == False:
             cls.ohlc.future_side = cls.calc_future_side(cls.future_side_period, cls.future_side_kijun, cls.ohlc)
+        print('calc all index1 time={}'.format(time.time() - start_time))
 
     '''
     joblib multiprocessing
@@ -282,6 +278,76 @@ class OneMinMarketData:
             cls.ohlc.future_side = cls.calc_future_side(cls.future_side_period, cls.future_side_kijun, cls.ohlc)
         print('time to calc data={}'.format(time.time() - start_time))
 
+    @classmethod
+    def generate_buy_bp_df(cls, buy_points, train_size=0.6):
+        rdf = cls.generate_raw_df()
+        bp_list = []
+        for i in range(len(rdf)):
+            if i not in buy_points:
+                bp_list.append(0)
+            else:
+                bp_list.append(1)
+        rdf = rdf.assign(bp=bp_list)
+        rdf2 = rdf.iloc[num_term * 2:]
+        # split_point = int(round(len(rdf2) * train_size))
+        # train_rdf = rdf2.iloc[:split_point]
+        # test_rdf = rdf2.iloc[split_point:]
+        # return train_rdf, test_rdf #df.reset_index(drop=True, inplace=True)
+        return rdf2
+
+    @classmethod
+    def generate_raw_df(cls):
+        def __change_dict_key(d, col_name):
+            newd = dict(map(lambda k: (col_name + str(k), d[k][:]), d.keys()))
+            return newd
+
+        data_dict = {'dt': cls.ohlc.dt[:], 'open': cls.ohlc.open[:], 'high': cls.ohlc.high[:], 'low': cls.ohlc.low[:],
+                     'close': cls.ohlc.close[:], 'size': cls.ohlc.size[:],
+                     'normalized_ave_true_range': cls.ohlc.normalized_ave_true_range[:],
+                     'three_outside_updown': cls.ohlc.three_outside_updown[:], 'breakway': cls.ohlc.breakway[:],
+                     'dark_cloud_cover': cls.ohlc.dark_cloud_cover[:],
+                     'dragonfly_doji': cls.ohlc.dragonfly_doji[:],
+                     'three_oupdown_sidebyside_white_linesutside_updown': cls.ohlc.updown_sidebyside_white_lines[:],
+                     'haramisen': cls.ohlc.haramisen[:], 'haramhikkake_patternisen': cls.ohlc.hikkake_pattern[:],
+                     'neck_pattern': cls.ohlc.neck_pattern[:],
+                     'upsidedownside_gap_three_method': cls.ohlc.upsidedownside_gap_three_method[:],
+                     'sar': cls.ohlc.sar[:], 'bop': cls.ohlc.bop[:]}
+        data_dict = {**data_dict, **__change_dict_key(cls.ohlc.ema, 'ema'),
+                     **__change_dict_key(cls.ohlc.ema_ave, 'ema_ave'),
+                     **__change_dict_key(cls.ohlc.ema_kairi, 'ema_kairi'),
+                     **__change_dict_key(cls.ohlc.dema_kairi, 'dema_kairi'),
+                     **__change_dict_key(cls.ohlc.ema_gra, 'ema_gra'), **__change_dict_key(cls.ohlc.dema, 'dema'),
+                     **__change_dict_key(cls.ohlc.dema_ave, 'dema_ave'),
+                     **__change_dict_key(cls.ohlc.dema_gra, 'dema_gra'),
+                     **__change_dict_key(cls.ohlc.midprice, 'midprice'),
+                     **__change_dict_key(cls.ohlc.momentum, 'momentum'),
+                     **__change_dict_key(cls.ohlc.momentum_ave, 'momentum_ave'),
+                     **__change_dict_key(cls.ohlc.rate_of_change, 'rate_of_change'),
+                     **__change_dict_key(cls.ohlc.rsi, 'rsi'), **__change_dict_key(cls.ohlc.williams_R, 'williams_R'),
+                     **__change_dict_key(cls.ohlc.beta, 'beta'), **__change_dict_key(cls.ohlc.tsf, 'tsf'),
+                     **__change_dict_key(cls.ohlc.correl, 'correl'),
+                     **__change_dict_key(cls.ohlc.linear_reg, 'linear_reg'),
+                     **__change_dict_key(cls.ohlc.linear_reg_angle, 'linear_reg_angle'),
+                     **__change_dict_key(cls.ohlc.linear_reg_intercept, 'linear_reg_intercept'),
+                     **__change_dict_key(cls.ohlc.linear_reg_slope, 'linear_reg_slope'),
+                     **__change_dict_key(cls.ohlc.stdv, 'stdv'), **__change_dict_key(cls.ohlc.var, 'var'),
+                     **__change_dict_key(cls.ohlc.linear_reg_ave, 'linear_reg_ave'),
+                     **__change_dict_key(cls.ohlc.linear_reg_angle_ave, 'linear_reg_angle_ave'),
+                     **__change_dict_key(cls.ohlc.linear_reg_intercept_ave, 'linear_reg_intercept_ave'),
+                     **__change_dict_key(cls.ohlc.linear_reg_slope_ave, 'linear_reg_slope_ave'),
+                     **__change_dict_key(cls.ohlc.stdv_ave, 'stdv_ave'),
+                     **__change_dict_key(cls.ohlc.var_ave, 'var_ave'), **__change_dict_key(cls.ohlc.adx, 'adx'),
+                     **__change_dict_key(cls.ohlc.aroon_os, 'aroon_os'),
+                     **__change_dict_key(cls.ohlc.cci, 'cci'), **__change_dict_key(cls.ohlc.dx, 'dx'),
+                     **__change_dict_key(cls.ohlc.macd, 'macd'),
+                     **__change_dict_key(cls.ohlc.macdsignal, 'macdsignal'),
+                     **__change_dict_key(cls.ohlc.macdhist, 'macdhist'),
+                     **__change_dict_key(cls.ohlc.macd_ave, 'macd_ave'),
+                     **__change_dict_key(cls.ohlc.macdsignal_ave, 'macdsignal_ave'),
+                     **__change_dict_key(cls.ohlc.macdhist_ave, 'macdhist_ave')}
+        df = pd.DataFrame.from_dict(data_dict)
+        return df
+
     '''
     dema, adx, macdはnum_term * 2くらいnanが発生する
     print(df.isnull().sum())
@@ -311,7 +377,6 @@ class OneMinMarketData:
                      'neck_pattern': cls.ohlc.neck_pattern[cut_size:end],
                      'upsidedownside_gap_three_method': cls.ohlc.upsidedownside_gap_three_method[cut_size:end],
                      'sar': cls.ohlc.sar[cut_size:end], 'bop': cls.ohlc.bop[cut_size:end]}
-
         data_dict = {**data_dict, **__change_dict_key(cls.ohlc.ema, 'ema'),
                      **__change_dict_key(cls.ohlc.ema_ave, 'ema_ave'),
                      **__change_dict_key(cls.ohlc.ema_kairi, 'ema_kairi'),
@@ -373,46 +438,40 @@ class OneMinMarketData:
                      'upsidedownside_gap_three_method': cls.ohlc.upsidedownside_gap_three_method[-1:],
                      'sar': cls.ohlc.sar[-1:], 'bop': cls.ohlc.bop[-1:]}
 
-        data_dict = {**data_dict,
-                     **__change_dict_key(cls.ohlc.ema, 'ema'),
+        data_dict = {**data_dict, **__change_dict_key(cls.ohlc.ema, 'ema'),
                      **__change_dict_key(cls.ohlc.ema_ave, 'ema_ave'),
                      **__change_dict_key(cls.ohlc.ema_kairi, 'ema_kairi'),
                      **__change_dict_key(cls.ohlc.dema_kairi, 'dema_kairi'),
-                     **__change_dict_key(cls.ohlc.ema_gra, 'ema_gra'),
-                     **__change_dict_key(cls.ohlc.dema, 'dema'),
+                     **__change_dict_key(cls.ohlc.ema_gra, 'ema_gra'), **__change_dict_key(cls.ohlc.dema, 'dema'),
                      **__change_dict_key(cls.ohlc.dema_ave, 'dema_ave'),
                      **__change_dict_key(cls.ohlc.dema_gra, 'dema_gra'),
                      **__change_dict_key(cls.ohlc.midprice, 'midprice'),
                      **__change_dict_key(cls.ohlc.momentum, 'momentum'),
                      **__change_dict_key(cls.ohlc.momentum_ave, 'momentum_ave'),
                      **__change_dict_key(cls.ohlc.rate_of_change, 'rate_of_change'),
-                     **__change_dict_key(cls.ohlc.rsi, 'rsi'),
-                     **__change_dict_key(cls.ohlc.williams_R, 'williams_R'),
-                     **__change_dict_key(cls.ohlc.beta, 'beta'),
-                     **__change_dict_key(cls.ohlc.tsf, 'tsf'),
+                     **__change_dict_key(cls.ohlc.rsi, 'rsi'), **__change_dict_key(cls.ohlc.williams_R, 'williams_R'),
+                     **__change_dict_key(cls.ohlc.beta, 'beta'), **__change_dict_key(cls.ohlc.tsf, 'tsf'),
                      **__change_dict_key(cls.ohlc.correl, 'correl'),
                      **__change_dict_key(cls.ohlc.linear_reg, 'linear_reg'),
                      **__change_dict_key(cls.ohlc.linear_reg_angle, 'linear_reg_angle'),
                      **__change_dict_key(cls.ohlc.linear_reg_intercept, 'linear_reg_intercept'),
                      **__change_dict_key(cls.ohlc.linear_reg_slope, 'linear_reg_slope'),
-                     **__change_dict_key(cls.ohlc.stdv, 'stdv'),
-                     **__change_dict_key(cls.ohlc.var, 'var'),
+                     **__change_dict_key(cls.ohlc.stdv, 'stdv'), **__change_dict_key(cls.ohlc.var, 'var'),
                      **__change_dict_key(cls.ohlc.linear_reg_ave, 'linear_reg_ave'),
                      **__change_dict_key(cls.ohlc.linear_reg_angle_ave, 'linear_reg_angle_ave'),
                      **__change_dict_key(cls.ohlc.linear_reg_intercept_ave, 'linear_reg_intercept_ave'),
                      **__change_dict_key(cls.ohlc.linear_reg_slope_ave, 'linear_reg_slope_ave'),
                      **__change_dict_key(cls.ohlc.stdv_ave, 'stdv_ave'),
-                     **__change_dict_key(cls.ohlc.var_ave, 'var_ave'),
-                     **__change_dict_key(cls.ohlc.adx, 'adx'),
+                     **__change_dict_key(cls.ohlc.var_ave, 'var_ave'), **__change_dict_key(cls.ohlc.adx, 'adx'),
                      **__change_dict_key(cls.ohlc.aroon_os, 'aroon_os'),
-                     **__change_dict_key(cls.ohlc.cci, 'cci'),
-                     **__change_dict_key(cls.ohlc.dx, 'dx'),
+                     **__change_dict_key(cls.ohlc.cci, 'cci'), **__change_dict_key(cls.ohlc.dx, 'dx'),
                      **__change_dict_key(cls.ohlc.macd, 'macd'),
                      **__change_dict_key(cls.ohlc.macdsignal, 'macdsignal'),
                      **__change_dict_key(cls.ohlc.macdhist, 'macdhist'),
                      **__change_dict_key(cls.ohlc.macd_ave, 'macd_ave'),
                      **__change_dict_key(cls.ohlc.macdsignal_ave, 'macdsignal_ave'),
                      **__change_dict_key(cls.ohlc.macdhist_ave, 'macdhist_ave')}
+
         df = pd.DataFrame.from_dict(data_dict)
         return df
 
@@ -433,6 +492,32 @@ class OneMinMarketData:
             elif buy_max < future_side_kijun and sell_max < future_side_kijun:
                 ohlc.future_side.append('no')
         return ohlc.future_side
+
+    @classmethod
+    def calc_pl_ls_points(cls, side, pl, ls, ohlc):  # both pl and ls should be plus val as abs
+        buy_points = []
+        sell_points = []
+        for i in range(len(ohlc.close)):
+            flg_buy = True
+            flg_sell = True
+            entry_p = ohlc.close[i]
+            j = 0
+            while flg_buy or flg_sell:
+                if i + j < len(ohlc.close):
+                    if -ls >= ohlc.close[i + j] - entry_p:  # check buy ls
+                        flg_buy = False
+                    if pl <= ohlc.close[i + j] - entry_p:  # check buy pl
+                        buy_points.append(i)
+                        flg_buy = False
+                    if -ls >= entry_p - ohlc.close[i + j]:  # check sell ls
+                        flg_sell = False
+                    if pl <= entry_p - ohlc.close[i + j]:  # check sell pl
+                        sell_points.append(i)
+                        flg_sell = False
+                else:
+                    break
+                j += 1
+        return buy_points, sell_points
 
     @classmethod
     def calc_ave_price(cls, open, high, low, close):
@@ -623,7 +708,7 @@ class OneMinMarketData:
         return -1
 
     @classmethod
-    def generate_tick_pred_data(cls, prediction, start_ind): #assume index 0 of ohlc and prediction is matched
+    def generate_tick_pred_data(cls, prediction, start_ind):  # assume index 0 of ohlc and prediction is matched
         tick = []
         dt = []
         ut = []
@@ -671,14 +756,14 @@ class OneMinMarketData:
             elif split_num - len(om_tick) < 0:
                 del om_tick[-(len(om_tick) - split_num):]
             tick.extend(om_tick)
-            ut.extend([start_ut + (j+1) for j in range(split_num)])
-            dt.extend([start_dt+timedelta(seconds=k+1) for k in range(split_num)])
+            ut.extend([start_ut + (j + 1) for j in range(split_num)])
+            dt.extend([start_dt + timedelta(seconds=k + 1) for k in range(split_num)])
             start_ut = ut[-1]
             start_dt = dt[-1]
-            if i ==0:
+            if i == 0:
                 pred.extend([0] * split_num)
             else:
-                pred.extend([prediction[i-1]] * split_num)
+                pred.extend([prediction[i - 1]] * split_num)
         stdata.dt.extend(dt)
         stdata.ut.extend(ut)
         stdata.price.extend(tick)
