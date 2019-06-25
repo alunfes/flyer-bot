@@ -3,13 +3,15 @@ class SimAccount:
         self.__initialize_order()
         self.__initialize_holding()
 
+        self.suspension_flg = False
+
         self.base_margin_rate = 1.2
         self.leverage = 4.0
-        self.slip_page = 0
+        self.slip_page = 50
         self.force_loss_cut_rate = 0.5
         self.initial_asset = 15000
         self.order_cancel_delay = 1
-        self.ls_penalty = 250
+        self.ls_penalty = 50
 
         self.pl_kijun = 0
         self.ls_kijun = 0
@@ -54,7 +56,7 @@ class SimAccount:
         self.after_pl = False
 
     def move_to_next(self, i, dt, ut, tick_price):
-        if self.start_dt == '':
+        if len(str(self.start_dt)) < 3:
             self.start_dt = dt
         self.__check_loss_cut(i, dt, ut, tick_price)
         self.__check_execution(i, dt, ut, tick_price)
@@ -62,7 +64,8 @@ class SimAccount:
         self.__check_pl(i, dt, ut, tick_price)
         self.__check_ls(i, dt, ut, tick_price)
         if self.holding_side != '':
-            self.current_pl = (tick_price - self.holding_price) * self.holding_size if self.holding_side == 'buy' else (self.holding_price - tick_price) * self.holding_size
+            self.current_pl = (tick_price - self.holding_price) * self.holding_size if self.holding_side == 'buy' else (
+                                                                                                                                   self.holding_price - tick_price) * self.holding_size
         else:
             self.current_pl = 0
         self.total_pl = self.realized_pl + self.current_pl
@@ -75,7 +78,9 @@ class SimAccount:
         self.__check_execution(i, dt, ut, tick_price)
         self.__check_cancel(i, dt, ut, tick_price)
         if self.holding_side != '':
-            self.realized_pl += (tick_price - self.holding_price) * self.holding_size if self.holding_side == 'buy' else (self.holding_price - tick_price) * self.holding_size
+            self.realized_pl += (
+                                            tick_price - self.holding_price) * self.holding_size if self.holding_side == 'buy' else (
+                                                                                                                                                self.holding_price - tick_price) * self.holding_size
         self.total_pl = self.realized_pl
         self.num_trade += 1
         self.total_pl_log.append(self.total_pl)
@@ -103,7 +108,7 @@ class SimAccount:
             self.ls_kijun = ls
             self.__add_log('entry order' + side + ' type=' + type, i, dt, ut, tick_price)
         else:
-            print('order is already exist!')
+            # print('order is already exist!')
             self.__add_log('order is already exist!', i, dt, ut, tick_price)
 
     def __update_holding(self, side, price, size, pl, ls, after_pl, i, dt, ut):
@@ -139,25 +144,29 @@ class SimAccount:
     def __check_pl(self, i, dt, ut, tick_price):
         if self.holding_side != '' and self.pl_kijun > 0:
             if self.holding_side == 'buy' and self.holding_price + self.pl_kijun <= tick_price:
+                self.suspension_flg = True
                 self.__add_log('pl executed.', i, dt, ut, tick_price)
-                self.__calc_executed_pl(self.hodling_price + self.pl_kijun, self.holding_size, i)
-                self.__update_holding(self.holding_side, self.holding_price + self.pl_kijun + 100, self.holding_size,
-                                      self.pl_kijun, self.ls_kijun, True, i, dt, ut)
+                self.__calc_executed_pl(self.holding_price + self.pl_kijun, self.holding_size, i)
+                self.__initialize_holding()
+                # self.__update_holding(self.holding_side, self.holding_price + self.pl_kijun + 100, self.holding_size, self.pl_kijun, self.ls_kijun, True, i, dt, ut)
             if self.holding_side == 'sell' and self.holding_price - self.pl_kijun >= tick_price:
+                self.suspension_flg = True
                 self.__add_log('pl executed.', i, dt, ut, tick_price)
-                self.__calc_executed_pl(self.hodling_price - self.pl_kijun, self.holding_size, i)
-                self.__update_holding(self.holding_side, self.holding_price - self.pl_kijun - 100, self.holding_size,
-                                      self.pl_kijun, self.ls_kijun, True, i, dt, ut)
+                self.__calc_executed_pl(self.holding_price - self.pl_kijun, self.holding_size, i)
+                self.__initialize_holding()
+                # self.__update_holding(self.holding_side, self.holding_price - self.pl_kijun - 100, self.holding_size, self.pl_kijun, self.ls_kijun, True, i, dt, ut)
 
     def __check_ls(self, i, dt, ut, tick_price):
-        if self.holding_side != '' and self.ll_kijun > 0:
+        if self.holding_side != '' and self.ls_kijun > 0:
             if self.holding_side == 'buy' and self.holding_price - self.ls_kijun >= tick_price:
+                self.suspension_flg = True
                 self.__add_log('ls executed.', i, dt, ut, tick_price)
-                self.__calc_executed_pl(self.hodling_price - self.ls_kijun - self.ls_penalty, self.holding_size, i)
+                self.__calc_executed_pl(self.holding_price - self.ls_kijun - self.ls_penalty, self.holding_size, i)
                 self.__initialize_holding()
             if self.holding_side == 'sell' and self.holding_price + self.ls_kijun <= tick_price:
+                self.suspension_flg = True
                 self.__add_log('ls executed.', i, dt, ut, tick_price)
-                self.__calc_executed_pl(self.hodling_price + self.ls_kijun + self.ls_penalty, self.holding_size, i)
+                self.__calc_executed_pl(self.holding_price + self.ls_kijun + self.ls_penalty, self.holding_size, i)
                 self.__initialize_holding()
 
     def __check_execution(self, i, dt, ut, tick_price):
@@ -176,30 +185,30 @@ class SimAccount:
     def __process_execution(self, exec_price, i, dt, ut, tick_price):
         if self.order_side != '':
             if self.holding_side == '':  # no position
-                self.__update_holding(self.order_side, exec_price, self.order_size, self.pl_kijun, self.ls_kijuni,
-                                      False, i, dt, ut)
+                self.__update_holding(self.order_side, exec_price, self.order_size, self.pl_kijun, self.ls_kijun, False,
+                                      i, dt, ut)
                 self.__add_log('New Entry:' + self.order_type, i, dt, ut, tick_price)
             else:
                 if self.holding_side == self.order_side:  # order side and position side is matched
                     price = round(((self.holding_price * self.holding_size) + (exec_price * self.order_size)) / (
                                 self.order_size + self.holding_size))
                     self.__update_holding(self.holding_side, price, self.order_size + self.holding_size, self.pl_kijun,
-                                          self.ls_kijuni, self.after_pl, i, dt, ut)
+                                          self.ls_kijun, self.after_pl, i, dt, ut)
                     self.__add_log('Additional Entry:' + self.order_type, i, dt, ut, tick_price)
                 elif self.holding_size > self.order_size:  # side is not matched and holding size > order size
                     self.__calc_executed_pl(exec_price, self.order_size, i)
                     self.__update_holding(self.holding_side, self.holding_price, self.holding_size - self.order_size,
-                                          self.pl_kijun, self.ls_kijuni, self.after_pl, i, dt, ut)
+                                          self.pl_kijun, self.ls_kijun, self.after_pl, i, dt, ut)
                     self.__add_log('Exit Order (h>o):' + self.order_type, i, dt, ut, tick_price)
                 elif self.holding_size == self.order_size:
                     self.__add_log('Exit Order (h=o):' + self.order_type, i, dt, ut, tick_price)
                     self.__calc_executed_pl(exec_price, self.order_size, i)
                     self.__initialize_holding()
                 else:  # in case order size is bigger than holding size
-                    self.__calc_executed_pl(exec_price, self.order_size, i)
-                    self.__add_log('Exit & Entry Order::' + self.order_type, i, dt, ut, tick_price)
+                    self.__calc_executed_pl(exec_price, self.holding_size, i)
+                    self.__add_log('Exit & Entry Order (h<o):' + self.holding_side, i, dt, ut, tick_price)
                     self.__update_holding(self.order_side, exec_price, self.order_size - self.holding_size,
-                                          self.pl_kijun, self.ls_kijuni, False, i, dt, ut)
+                                          self.pl_kijun, self.ls_kijun, False, i, dt, ut)
 
     def __calc_executed_pl(self, exec_price, size, i):  # assume all order size was executed
         pl = (exec_price - self.holding_price - self.slip_page) * size if self.holding_side == 'buy' else (
@@ -210,35 +219,6 @@ class SimAccount:
             self.num_win += 1
 
     def __check_loss_cut(self, i, dt, ut, tick_price):
-        if self.holding_side != '' and self.order_type != 'losscut':
-            req_collateral = self.holding_size * tick_price / self.leverage
-            pl = tick_price - self.holding_price if self.holding_side == 'buy' else self.holding_price - tick_price
-            pl = pl * self.holding_size
-            margin_rate = (self.initial_asset + self.realized_pl + pl) / req_collateral
-            if margin_rate <= self.force_loss_cut_rate:
-                self.__force_exit(i, dt, ut)
-                self.__add_log('Loss cut postion! margin_rate=' + str(margin_rate), i, dt, ut, tick_price)
-
-    def __force_exit(self, i, dt, ut):
-        self.order_side = 'buy' if self.holding_side == 'sell' else 'sell'
-        self.order_size = self.holding_size
-        self.order_type = 'losscut'
-        self.order_i = i
-        self.order_dt = dt
-        self.order_ut = ut
-        self.order_cancel = False
-        self.order_expire = 86400
-
-    def __add_log(self, log, i, dt, ut, tick_price):
-        self.total_pl_log.append(self.total_pl)
-        self.action_log.append(log)
-        self.holding_log.append(self.holding_side + ' @' + str(self.holding_price) + ' x' + str(self.holding_size))
-        self.order_log.append(
-            self.order_side + ' @' + str(self.order_price) + ' x' + str(self.order_size) + ' cancel=' + str(
-                self.order_cancel) + ' type=' + self.order_type)
-        self.i_log.append(i)
-        self.dt_log.append(dt)
-        #        print('i={},dt={},action={},holding side={}, holding price={},holding size={},order side={},order price={},order size={},pl={},num_trade={}'.format(i, tick_price,log,self.holding_side,self.holding_price,self.holding_size,self.order_side,self.order_price,self.order_size,self.total_pl,self.num_trade))
         if self.holding_side != '' and self.order_type != 'losscut':
             req_collateral = self.holding_size * tick_price / self.leverage
             pl = tick_price - self.holding_price if self.holding_side == 'buy' else self.holding_price - tick_price

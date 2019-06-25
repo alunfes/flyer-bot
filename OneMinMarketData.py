@@ -95,7 +95,7 @@ class OneMinMarketData:
         cls.window_term = window_term
         cls.future_side_period = future_side_period
         cls.future_side_kijun = future_side_kijun
-        cls.ohlc = cls.read_from_csv('/content/drive/My Drive/one_min_data (1).csv')
+        cls.ohlc = cls.read_from_csv('/content/drive/My Drive/one_min_data.csv')
         cls.ohlc.del_data(initial_data_vol)
         cls.__calc_all_index(False)
         # cls.__calc_all_index2_main(False)
@@ -279,7 +279,7 @@ class OneMinMarketData:
         print('time to calc data={}'.format(time.time() - start_time))
 
     @classmethod
-    def generate_buy_bp_df(cls, buy_points, train_size=0.6):
+    def generate_buy_points_df(cls, buy_points):
         rdf = cls.generate_raw_df()
         bp_list = []
         for i in range(len(rdf)):
@@ -288,11 +288,20 @@ class OneMinMarketData:
             else:
                 bp_list.append(1)
         rdf = rdf.assign(bp=bp_list)
-        rdf2 = rdf.iloc[num_term * 2:]
-        # split_point = int(round(len(rdf2) * train_size))
-        # train_rdf = rdf2.iloc[:split_point]
-        # test_rdf = rdf2.iloc[split_point:]
-        # return train_rdf, test_rdf #df.reset_index(drop=True, inplace=True)
+        rdf2 = rdf.iloc[cls.num_term * 2:]
+        return rdf2
+
+    @classmethod
+    def generate_sell_points_df(cls, sell_points):
+        rdf = cls.generate_raw_df()
+        sp_list = []
+        for i in range(len(rdf)):
+            if i not in sell_points:
+                sp_list.append(0)
+            else:
+                sp_list.append(1)
+        rdf = rdf.assign(sp=sp_list)
+        rdf2 = rdf.iloc[cls.num_term * 2:]
         return rdf2
 
     @classmethod
@@ -494,7 +503,7 @@ class OneMinMarketData:
         return ohlc.future_side
 
     @classmethod
-    def calc_pl_ls_points(cls, side, pl, ls, ohlc):  # both pl and ls should be plus val as abs
+    def calc_pl_ls_points(cls, pl, ls, ohlc):  # both pl and ls should be plus val as abs
         buy_points = []
         sell_points = []
         for i in range(len(ohlc.close)):
