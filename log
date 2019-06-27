@@ -12,7 +12,7 @@ pl = 10000
 ls = 1000
 pred_kijun = 0.9
 upper_kijun = 0.9
-lower_kijun = 0.5
+lower_kijun = 0.8
 
 #params = {'objective': 'multiclass','num_class': 4,  'early_stopping_rounds':10, 'tree_learner': 'data'}
 
@@ -23,15 +23,17 @@ params = {'objective': 'multiclass','num_class': 4,'boosting': 'dart',  'early_s
 params = {'objective': 'binary','boosting': 'gbdt',  #'early_stopping_rounds':50,
           'learning_rate': 0.01, 'num_iterations': 3000, 'max_depth':8, 'num_leaves': 200}
           '''
-params = {'objective': 'binary','boosting': 'gbdt', 'learning_rate': 0.01, 'num_iterations': 5000, 'max_depth':7, 'num_leaves': 60, 'early_stopping_rounds':30,}
+params = {'objective': 'binary','boosting': 'gbdt', 'learning_rate': 0.5, 'num_iterations': 5000, 'max_depth':16, 'num_leaves':1600 ,  'verbose':0, 'early_stopping_rounds':50}
+
+
 
 start = time.time()
-OneMinMarketData.initialize_for_bot(num_term, window_term, future_period, futurel_kijun, 5000)
+OneMinMarketData.initialize_for_bot(num_term, window_term, future_period, futurel_kijun, 30000)
 buy_points, sell_points = OneMinMarketData.calc_pl_ls_points(pl, ls, OneMinMarketData.ohlc)
 
 lgbmodel = LgbModel()
-train_size = 0.6
-valid_size = 0.2
+train_size = 0.9
+valid_size = 0.3
 sdf = OneMinMarketData.generate_sell_points_df(sell_points)
 bdf = OneMinMarketData.generate_buy_points_df(buy_points)
 train_xb, test_xb, train_yb, test_yb, valid_xb, valid_yb = lgbmodel.generate_bsp_data(bdf, 'buy', train_size, valid_size)
@@ -53,14 +55,15 @@ predictions_buy = lgbmodel.bp_prediciton(model_buy, test_xb, pred_kijun)
 predictions_sell = lgbmodel.bp_prediciton(model_sell, test_xs, pred_kijun)
 print('test accuracy buy={}'.format(lgbmodel.calc_bp_accuracy(predictions_buy, test_yb)))
 print('test accuracy sell={}'.format(lgbmodel.calc_bp_accuracy(predictions_sell, test_ys)))
-start_ind = OneMinMarketData.check_matched_index(test_x)
+start_ind = OneMinMarketData.check_matched_index(test_xb)
 predictions_buysell = lgbmodel.bp_buysell_prediction(predictions_buy, predictions_sell, upper_kijun, lower_kijun)
 stdata = OneMinMarketData.generate_tick_pred_data(predictions_buysell, start_ind)
 sim = Sim()
 ac = SimAccount()
 #    ac = sim.sim_bp(stdata, pl, ls, ac)
 ac = sim.sim_buysell(stdata, pl, ls, ac)
-print('total pl={},num trade={},win rate={}'.format(ac.total_pl,ac.num_trade,ac.win_rate))
+print('total pl={},num trade={},win rate={}, num_buy={}, num_sell={}'.format(ac.total_pl,ac.num_trade,ac.win_rate,ac.num_buy,ac.num_sell))
+
 
 fig, ax1 = plt.subplots()
 plt.figure(figsize=(30,30),dpi=200)
@@ -73,5 +76,5 @@ xs = list(range(len(OneMinMarketData.ohlc.close)))
 ys = OneMinMarketData.ohlc.close
 markers_on = buy_points
 plt.plot(xs, ys, '-gD', markevery=markers_on, color='blue', markeredgecolor='green')
-plt.axvspan(0, int(len(df)*0.6), facecolor='#2ca02c', alpha=0.5)
+plt.axvspan(0, int(len(sdf)*train_size), facecolor='#2ca02c', alpha=0.5)
 plt.show()
