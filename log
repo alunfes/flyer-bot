@@ -23,12 +23,13 @@ params = {'objective': 'multiclass','num_class': 4,'boosting': 'dart',  'early_s
 params = {'objective': 'binary','boosting': 'gbdt',  #'early_stopping_rounds':50,
           'learning_rate': 0.01, 'num_iterations': 3000, 'max_depth':8, 'num_leaves': 200}
           '''
-params = {'objective': 'binary','boosting': 'gbdt', 'learning_rate': 0.5, 'num_iterations': 5000, 'max_depth':16, 'num_leaves':1600 ,  'verbose':0, 'early_stopping_rounds':50}
-
+params = {'objective': 'binary','boosting': 'gbdt', 'learning_rate': 0.65, 'num_iterations': 10000, 'max_depth':9, 'num_leaves':200 ,'verbose_eval':False,  'verbose':-1, 'early_stopping_rounds':50}
+#params = {'objective': 'binary','boosting': 'gbdt', 'learning_rate': 0.65, 'num_iterations': 10000, 'max_depth':9, 'num_leaves':200 ,'verbose_eval':False,  'verbose':-1, 'early_stopping_rounds':50}
 
 
 start = time.time()
-OneMinMarketData.initialize_for_bot(num_term, window_term, future_period, futurel_kijun, 30000)
+#OneMinMarketData.initialize_for_bot(num_term, window_term, future_period, futurel_kijun, 30000)
+OneMinMarketData.initialize_for_bot(num_term, window_term, future_period, futurel_kijun, 60000, 30000)
 buy_points, sell_points = OneMinMarketData.calc_pl_ls_points(pl, ls, OneMinMarketData.ohlc)
 
 lgbmodel = LgbModel()
@@ -36,8 +37,10 @@ train_size = 0.9
 valid_size = 0.3
 sdf = OneMinMarketData.generate_sell_points_df(sell_points)
 bdf = OneMinMarketData.generate_buy_points_df(buy_points)
-train_xb, test_xb, train_yb, test_yb, valid_xb, valid_yb = lgbmodel.generate_bsp_data(bdf, 'buy', train_size, valid_size)
-train_xs, test_xs, train_ys, test_ys, valid_xs, valid_ys = lgbmodel.generate_bsp_data(sdf, 'sell', train_size, valid_size)
+#train_xb, test_xb, train_yb, test_yb, valid_xb, valid_yb = lgbmodel.generate_bsp_data(bdf, 'buy', train_size, valid_size)
+train_xb, test_xb, train_yb, test_yb, valid_xb, valid_yb = lgbmodel.generate_bsp_data_no_random(bdf, 'buy', train_size, valid_size)
+#train_xs, test_xs, train_ys, test_ys, valid_xs, valid_ys = lgbmodel.generate_bsp_data(sdf, 'sell', train_size, valid_size)
+train_xs, test_xs, train_ys, test_ys, valid_xs, valid_ys = lgbmodel.generate_bsp_data_no_random(sdf, 'sell', train_size, valid_size)
 model_buy = lgbmodel.train_params_with_validations(train_xb, train_yb,valid_xb, valid_yb, params)
 model_sell = lgbmodel.train_params_with_validations(train_xs, train_ys,valid_xs, valid_ys, params)
 
@@ -62,8 +65,8 @@ sim = Sim()
 ac = SimAccount()
 #    ac = sim.sim_bp(stdata, pl, ls, ac)
 ac = sim.sim_buysell(stdata, pl, ls, ac)
-print('total pl={},num trade={},win rate={}, num_buy={}, num_sell={}'.format(ac.total_pl,ac.num_trade,ac.win_rate,ac.num_buy,ac.num_sell))
-
+print('total pl={},num trade={},win rate={}, pl_stability={}, num_buy={}, num_sell={}'.format(ac.total_pl,ac.num_trade,ac.win_rate, ac.pl_stability, ac.num_buy,ac.num_sell))
+print('strategy performance={}'.format(ac.total_pl * ac.pl_stability))
 
 fig, ax1 = plt.subplots()
 plt.figure(figsize=(30,30),dpi=200)
